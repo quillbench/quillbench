@@ -9,12 +9,15 @@ from .. import accounts, backup, export
 from ..config import WorkspaceConfig
 from ..settings import StudioSettings, save_archived_projects, save_setting
 from ..storage import batch_status, list_batches
+from . import builder as project_builder
 
 
 def render(ws: WorkspaceConfig, workspaces: list[WorkspaceConfig], me: str,
            settings: StudioSettings) -> None:
-    t_assign, t_people, t_ws, t_export = st.tabs(
-        ["Assignments", "People", "Workspaces & archive", "Export & backup"])
+    t_proj, t_assign, t_people, t_ws, t_export = st.tabs(
+        ["Projects", "Assignments", "People", "Workspaces & archive", "Export & backup"])
+    with t_proj:
+        project_builder.render(ws, me)
     with t_assign:
         _assignments(ws)
     with t_people:

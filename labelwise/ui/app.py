@@ -46,6 +46,8 @@ def _load(stamp: tuple):
     return settings, workspaces, problems, checks
 
 
+from labelwise.ui import builder as project_builder  # noqa: E402
+
 settings, workspaces, load_problems, checks = _load(_stamp())
 
 st.set_page_config(page_title=settings.title, page_icon=str(Path(__file__).parent / "assets" / "icon.png"), layout="wide",
@@ -132,6 +134,23 @@ def visible_batches(ws, name: str) -> list[str]:
 if not st.session_state.logged_in:
     with st.container(key="labelwise_login"):
         login_head(settings.title, settings.subtitle)
+        if not users:
+            st.info("Welcome. This first account becomes the admin.")
+            with st.form("first_admin", border=False):
+                name_in = st.text_input("Choose a user ID").strip()
+                pass_in = st.text_input("Choose a password (8+ characters)", type="password")
+                if st.form_submit_button("Create admin account", width="stretch", type="primary"):
+                    try:
+                        accounts.create_first_admin(name_in, pass_in)
+                    except ValueError as exc:
+                        st.error(str(exc))
+                    else:
+                        st.session_state.logged_in = True
+                        st.session_state.annotator = name_in
+                        st.session_state.auth_issued = int(time.time())
+                        st.session_state.auth_epoch = 0
+                        st.rerun()
+            st.stop()
         with st.form("login", border=False):
             name_in = st.text_input("User ID", placeholder="Your assigned identifier")
             pass_in = st.text_input("Password", type="password")
@@ -149,9 +168,6 @@ if not st.session_state.logged_in:
                 else:
                     accounts.record_login(name_in, False)
                     st.error("Wrong user ID or password.")
-        if not users:
-            st.warning(f"No accounts exist yet. Create the first admin with "
-                       f"`labelwise user add <id> --admin`.")
         st.markdown(f'<div class="labelwise-login-foot">{SHORT_NAME} {__version__} · © {AUTHOR}</div>',
                     unsafe_allow_html=True)
     st.stop()
@@ -196,6 +212,11 @@ if load_problems and user_is_admin:
     with st.expander(f"⚠ {len(load_problems)} workspace(s) could not be loaded", expanded=True):
         for p in load_problems:
             st.error(p)
+
+if not my_workspaces and user_is_admin:
+    st.info("Create your first project.")
+    project_builder.render(None, me)
+    st.stop()
 
 if not my_workspaces:
     st.info("Nothing is assigned to you right now. Please contact the study owner.")
