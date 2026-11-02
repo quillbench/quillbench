@@ -109,7 +109,7 @@ def _new_id(name: str) -> str:
     return found
 
 
-def create_project(name: str, task: str, instructions: str, table: pd.DataFrame,
+def create_project(name: str, task: str, instructions: str, table: pd.DataFrame | None,
                    display: list[str], owner: str, batch_size: int = 0, shuffle: bool = False,
                    labels: list[str] | None = None, scale: dict | None = None,
                    people: list[str] | None = None, per_batch: int = 1) -> WorkspaceConfig:
@@ -122,12 +122,12 @@ def create_project(name: str, task: str, instructions: str, table: pd.DataFrame,
         raise ValueError("Add at least two labels.")
     if task == "rating" and not (scale and scale["min"] < scale["max"] and scale["step"] > 0):
         raise ValueError("The slider needs a minimum below its maximum and a step above 0.")
-    if not display:
+    if table is not None and not display:
         raise ValueError("Choose at least one column to show.")
 
     ws_id = _new_id(name)
     project = {"id": ws_id, "name": name, "task": task, "default": True,
-               "batch_prefix": BATCH_PREFIX, "display": list(display),
+               "batch_prefix": BATCH_PREFIX, "display": list(display or []),
                "instructions": instructions.strip()}
     if task == "choice":
         project["labels"] = list(labels)
@@ -141,7 +141,7 @@ def create_project(name: str, task: str, instructions: str, table: pd.DataFrame,
     try:
         (root / MANIFEST_NAME).write_text(yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True),
                                           encoding="utf-8")
-        batches = _write_batches(root, split(table, batch_size, shuffle))
+        batches = [] if table is None else _write_batches(root, split(table, batch_size, shuffle))
         registry.add(root)
     except (ConfigError, OSError, ValueError):
         shutil.rmtree(root, ignore_errors=True)
@@ -151,9 +151,19 @@ def create_project(name: str, task: str, instructions: str, table: pd.DataFrame,
     return ws
 
 
+def _update_project(ws: WorkspaceConfig, **fields) -> None:
+    raw = yaml.safe_load(ws.manifest.read_text(encoding="utf-8"))
+    raw["projects"][0].update(fields)
+    ws.manifest.write_text(yaml.safe_dump(raw, sort_keys=False, allow_unicode=True), encoding="utf-8")
+
+
 def add_data(ws: WorkspaceConfig, table: pd.DataFrame, id_column: str | None, batch_size: int = 0,
-             shuffle: bool = False, people: list[str] | None = None, per_batch: int = 1) -> list[str]:
-    """Add rows to a project made here, as new batches; existing batches are untouched."""
+             shuffle: bool = False, people: list[str] | None = None, per_batch: int = 1,
+             display: list[str] | None = None) -> list[str]:
+    """Add rows to a project made here, as new batches; existing batches are untouched.
+
+    ``display`` picks the columns to show when the project has none chosen yet.
+    """
     seen: list[str] = []
     for path in _existing(ws.root):
         seen += pd.read_csv(path, dtype=str, keep_default_na=False)["id"].tolist()
@@ -161,6 +171,12 @@ def add_data(ws: WorkspaceConfig, table: pd.DataFrame, id_column: str | None, ba
     clash = sorted(set(new["id"]) & set(seen))
     if clash:
         raise ValueError(f"These ids are already in the project: {clash[:5]}")
+    shown = [f.column for f in ws.projects[0].display]
+    missing = [c for c in shown if c not in new.columns]
+    if missing:
+        raise ValueError(f"The CSV is missing the column(s) annotators see: {missing}")
+    if display and not shown:
+        _update_project(ws, display=list(display))
     batches = _write_batches(ws.root, split(new, batch_size, shuffle))
     assign(ws, batches, people or [], per_batch)
     return batches
@@ -168,9 +184,7 @@ def add_data(ws: WorkspaceConfig, table: pd.DataFrame, id_column: str | None, ba
 
 def add_labels(ws: WorkspaceConfig, new: list[str]) -> None:
     """Add label buttons to a project made here. Labels are never removed: saved answers use them."""
-    raw = yaml.safe_load(ws.manifest.read_text(encoding="utf-8"))
-    project = raw["projects"][0]
-    if project.get("task") != "choice":
+    if ws.projects[0].task != "choice":
         raise ValueError("Only label-button projects have labels.")
-    project["labels"] = list(dict.fromkeys(project["labels"] + new))
-    ws.manifest.write_text(yaml.safe_dump(raw, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    current = yaml.safe_load(ws.manifest.read_text(encoding="utf-8"))["projects"][0]["labels"]
+    _update_project(ws, labels=list(dict.fromkeys(current + new)))

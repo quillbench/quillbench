@@ -215,7 +215,7 @@ if load_problems and user_is_admin:
 
 if not my_workspaces and user_is_admin:
     st.info("Create your first project.")
-    project_builder.render(None, me)
+    project_builder.render([], me)
     st.stop()
 
 if not my_workspaces:
@@ -224,9 +224,11 @@ if not my_workspaces:
 
 ws = by_id[st.session_state.workspace]
 errors, warnings = checks.get(ws.id, ([], []))
+# Always present, so the tabs below keep their place when the check comes or goes.
+check_slot = st.container()
 if user_is_admin and (errors or warnings):
-    with st.expander(f"Workspace check: {len(errors)} error(s), {len(warnings)} warning(s)",
-                     expanded=bool(errors)):
+    with check_slot.expander(f"Workspace check: {len(errors)} error(s), {len(warnings)} warning(s)",
+                             expanded=bool(errors)):
         for e in errors:
             st.error(e)
         for w in warnings:
