@@ -1,0 +1,81 @@
+{
+  "1": {
+    "records": [
+      {
+        "title": "Quiet Cartography"
+      },
+      {
+        "title": "The Tin Orchard"
+      }
+    ],
+    "elapsed": 0.021
+  },
+  "2": {
+    "records": [
+      {
+        "book_count": 4
+      }
+    ],
+    "elapsed": 0.008
+  },
+  "3": {
+    "records": [
+      {
+        "avg_price": 18.5
+      }
+    ],
+    "elapsed": 0.014
+  },
+  "4": {
+    "records": [
+      {
+        "city": "Sennan",
+        "stores": 3
+      },
+      {
+        "city": "Kainan",
+        "stores": 2
+      },
+      {
+        "city": "Riverbend",
+        "stores": 1
+      }
+    ],
+    "elapsed": 0.019
+  },
+  "5": {
+    "records": [],
+    "elapsed": 0.011
+  },
+  "6": {
+    "records": [
+      {
+        "publisher": "Kainan Press"
+      }
+    ],
+    "elapsed": 0.006
+  },
+  "7": {
+    "records": [
+      {
+        "author": "Ada Sennan",
+        "cities": [
+          "Sennan",
+          "Riverbend"
+        ]
+      },
+      {
+        "author": "Boris Vale",
+        "cities": [
+          "Kainan"
+        ]
+      }
+    ],
+    "elapsed": 0.023
+  },
+  "8": {
+    "records": [],
+    "elapsed": 0.004,
+    "error": "Neo.ClientError.Statement.SyntaxError: Unknown property name: revenue_2024"
+  }
+}

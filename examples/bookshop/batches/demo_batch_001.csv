@@ -1,0 +1,22 @@
+id,local_id,category,difficulty,split,nl_query,gold_cypher,expects_empty
+1,1,lookup,easy,dev,List the titles of all books written by Ada Sennan.,"MATCH (a:Author {name: 'Ada Sennan'})-[:WROTE]->(b:Book)
+RETURN b.title AS title
+ORDER BY title",false
+2,2,aggregate,easy,dev,How many books were published by Kainan Press?,"MATCH (b:Book)-[:PUBLISHED_BY]->(p:Publisher {name: 'Kainan Press'})
+RETURN count(b) AS book_count",false
+3,3,aggregate,medium,dev,What is the average price of books sold in stores located in Sennan? Return a single number.,"MATCH (b:Book)-[:SOLD_IN]->(s:Store)-[:IN_CITY]->(c:City {name: 'Sennan'})
+RETURN round(avg(b.price), 2) AS avg_price",false
+4,4,join,medium,test,"For each city, list the city name and the number of bookstores in it, ordered by store count descending.","MATCH (s:Store)-[:IN_CITY]->(c:City)
+RETURN c.name AS city, count(s) AS stores
+ORDER BY stores DESC, city",false
+5,5,filter,hard,test,Which authors have written more than two books published by Kainan Press?,"MATCH (a:Author)-[:WROTE]->(b:Book)-[:PUBLISHED_BY]->(:Publisher {name: 'Kainan Press'})
+WITH a, count(b) AS n
+WHERE n > 2
+RETURN a.name AS author, n AS books",true
+6,6,lookup,easy,test,Which publisher published 'The Tin Orchard'?,"MATCH (b:Book {title: 'The Tin Orchard'})-[:PUBLISHED_BY]->(p:Publisher)
+RETURN p.name AS publisher",false
+7,7,join,hard,test,"List each author together with the cities where their books are sold, as one row per author.","MATCH (a:Author)-[:WROTE]->(:Book)-[:SOLD_IN]->(:Store)-[:IN_CITY]->(c:City)
+RETURN a.name AS author, collect(DISTINCT c.name) AS cities
+ORDER BY author",false
+8,8,aggregate,medium,test,What is the total revenue of the Riverbend store in 2024?,"MATCH (s:Store {name: 'Riverbend Books'})
+RETURN s.revenue_2024 AS revenue",false

@@ -1,0 +1,10 @@
+[Unit]
+Description=Back up Labelwise answers every night at 02:30
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

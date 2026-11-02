@@ -1,0 +1,4 @@
+id,jury_verdict,judge_a_verdict,judge_a_reason,judge_b_verdict,judge_b_reason
+1,CORRECT,CORRECT,Query returns titles for the named author.,CORRECT,Matches the question.
+5,UNCERTAIN,CORRECT,Threshold applied as asked.,UNCERTAIN,Empty result is plausible but unverified.
+8,INCORRECT,INCORRECT,Property does not exist in the schema.,INCORRECT,Query errors out.

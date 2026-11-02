@@ -1,0 +1,25 @@
+# Annotation data never lives in this repo: it stays in each paper's workspace.
+progress/
+labelwise_exports/
+pas_exports/
+labelwise_assignments*.json
+pas_assignments*.json
+examples/*/progress/
+# Secrets
+.env
+*.secret
+labelwise.env
+pas.env
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp

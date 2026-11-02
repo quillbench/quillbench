@@ -1,0 +1,20 @@
+# Query-review example with a tiny invented bookshop graph (no real data).
+#   labelwise workspace add examples/bookshop
+workspace:
+  id: bookshop
+  name: Bookshop (query-review example)
+  owner: Your Name
+  batches_dir: batches
+  progress_dir: progress
+projects:
+  - id: bookshop_review
+    name: Bookshop questions
+    task: verdict
+    default: true
+    benchmark_csv: benchmark_example.csv
+    gold_cache: {file: gold_cache_example.json}
+    jury_results:
+      csv: jury_example.csv
+      judges: [judge_a, judge_b]
+    instructions: |
+      Decide whether the reference query correctly answers the question.
