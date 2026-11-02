@@ -17,7 +17,7 @@ def render(ws: WorkspaceConfig, workspaces: list[WorkspaceConfig], me: str,
     t_proj, t_assign, t_people, t_ws, t_export = st.tabs(
         ["Projects", "Assignments", "People", "Workspaces & archive", "Export & backup"])
     with t_proj:
-        project_builder.render(ws, me)
+        project_builder.render(workspaces, me)
     with t_assign:
         _assignments(ws)
     with t_people:

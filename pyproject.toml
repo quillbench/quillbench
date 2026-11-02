@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "labelwise"
-version = "1.1.0"
+version = "1.1.1"
 description = "Labelwise: config-driven human annotation for research datasets, one workspace per paper."
 authors = [{ name = "A.C. Pogaku" }]
 license = { file = "LICENSE" }

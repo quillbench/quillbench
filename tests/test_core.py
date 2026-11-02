@@ -256,3 +256,15 @@ def test_bad_project_leaves_nothing(studio):
     with pytest.raises(ValueError):
         builder.create_project("x", "choice", "", _table(1), ["text"], "me", labels=["only"])
     assert not list(builder.projects_root().glob("*"))
+
+
+def test_empty_project_takes_csv_later(studio):
+    ws = builder.create_project("Later", "choice", "", None, [], "me", labels=["A", "B"])
+    assert builder.is_app_project(ws) and not list_batches(ws)
+    assert builder.add_data(ws, _table(4), None, batch_size=2, people=["ann", "ben"],
+                            display=["text"]) == ["batch_001", "batch_002"]
+    ws = load_workspace(ws.root)
+    assert [f.column for f in ws.projects[0].display] == ["text"]
+    assert accounts.load_assignments(ws)["ben"]["batches"] == ["batch_002"]
+    with pytest.raises(ValueError, match="missing"):
+        builder.add_data(ws, pd.DataFrame({"other": ["x"]}), None)

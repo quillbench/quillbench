@@ -7,6 +7,7 @@ import streamlit as st
 
 from .. import accounts, builder
 from ..config import ConfigError, WorkspaceConfig
+from ..storage import batch_status, list_batches
 
 AUTO_ID = "(number the rows for me)"
 
@@ -30,13 +31,13 @@ def _upload(key: str) -> pd.DataFrame | None:
 
 
 def _split_controls(table: pd.DataFrame, key: str) -> dict:
-    st.markdown("**Split and assign**")
+    st.markdown("**Split into batches and assign**")
     c1, c2 = st.columns(2)
     size = c1.number_input("Items per batch (0 = one batch)", 0, len(table), 0, key=f"{key}_size")
     per = c2.number_input("Annotators per batch", 1, 20, 1, key=f"{key}_per",
                           help="Above 1, each batch goes to several people, for agreement scores.")
     shuffle = st.checkbox("Shuffle items first", key=f"{key}_shuffle")
-    people = st.multiselect("Annotators", _people(), key=f"{key}_people",
+    people = st.multiselect("Annotators (optional, you can assign later)", _people(), key=f"{key}_people",
                             help="Batches are dealt to them in turn. Add people in the People tab.")
     batches = len(builder.split(table, int(size)))
     st.caption(f"This makes {batches} batch(es).")
@@ -44,70 +45,118 @@ def _split_controls(table: pd.DataFrame, key: str) -> dict:
 
 
 def _create(me: str) -> None:
-    st.markdown("**New project**")
-    name = st.text_input("Project name", key="new_name")
-    task = st.selectbox("What annotators do", list(builder.TASKS), key="new_task",
+    # Bumping the version gives the next project empty fields.
+    v = st.session_state.get("new_version", 0)
+    name = st.text_input("Project name", key=f"new_name_{v}")
+    task = st.selectbox("What annotators do", list(builder.TASKS), key=f"new_task_{v}",
                         format_func=builder.TASKS.get)
     labels, scale = None, None
     if task == "choice":
-        labels = builder.clean_labels(st.text_area("Label buttons (one per line)", key="new_labels"))
+        labels = builder.clean_labels(st.text_area("Label buttons (one per line)", key=f"new_labels_{v}"))
     elif task == "rating":
         c1, c2, c3 = st.columns(3)
-        scale = {"min": c1.number_input("Lowest", value=0.0, key="new_min"),
-                 "max": c2.number_input("Highest", value=1.0, key="new_max"),
-                 "step": c3.number_input("Step", value=0.1, min_value=0.001, key="new_step")}
-    instructions = st.text_area("Instructions for annotators", key="new_instructions")
-    table = _upload("new_csv")
-    if table is None:
-        return
-    columns = list(table.columns)
-    id_choice = st.selectbox("Column with item ids", [AUTO_ID] + columns, key="new_id",
-                             index=columns.index("id") + 1 if "id" in columns else 0)
-    id_column = None if id_choice == AUTO_ID else id_choice
-    display = st.multiselect("Columns annotators see", [c for c in columns if c != id_column],
-                             default=[c for c in columns if c != id_column], key="new_display")
-    plan = _split_controls(table, "new")
-    if st.button("Create project", type="primary", key="new_create"):
+        scale = {"min": c1.number_input("Lowest", value=0.0, key=f"new_min_{v}"),
+                 "max": c2.number_input("Highest", value=1.0, key=f"new_max_{v}"),
+                 "step": c3.number_input("Step", value=0.1, min_value=0.001, key=f"new_step_{v}")}
+    instructions = st.text_area("Instructions for annotators", key=f"new_instructions_{v}")
+    st.caption("Upload CSV files after creating the project, under Admin → Projects.")
+    if st.button("Create project", type="primary", key=f"new_create_{v}"):
         try:
-            ws = builder.create_project(name, task, instructions, builder.with_ids(table, id_column),
-                                        display, me, labels=labels, scale=scale, **plan)
+            ws = builder.create_project(name, task, instructions, None, [], me,
+                                        labels=labels, scale=scale)
         except (ValueError, ConfigError, OSError) as exc:
             st.error(str(exc))
             return
         st.cache_resource.clear()
-        st.session_state.workspace = ws.id
+        st.session_state.new_version = v + 1
+        st.session_state.manage_project = ws.id
         st.rerun()
 
 
-def _manage(ws: WorkspaceConfig) -> None:
-    project = ws.projects[0]
-    st.markdown(f"**Add to {ws.name}**")
-    if project.task == "choice":
-        added = builder.clean_labels(st.text_input("New label buttons, comma separated",
-                                                   key=f"more_labels_{ws.id}"))
-        if st.button("Add labels", key=f"more_labels_save_{ws.id}") and added:
-            builder.add_labels(ws, added)
-            st.cache_resource.clear()
-            st.rerun()
-    table = _upload(f"more_csv_{ws.id}")
+def _add_labels(ws: WorkspaceConfig) -> None:
+    added = builder.clean_labels(st.text_input("New label buttons, comma separated",
+                                               key=f"more_labels_{ws.id}"))
+    if st.button("Add labels", key=f"more_labels_save_{ws.id}") and added:
+        builder.add_labels(ws, added)
+        st.cache_resource.clear()
+        st.rerun()
+
+
+def _add_csv(ws: WorkspaceConfig) -> None:
+    # A new uploader after each success, so a second click cannot add the file twice.
+    version_key = f"more_version_{ws.id}"
+    key = f"more_{ws.id}_{st.session_state.get(version_key, 0)}"
+    st.markdown("**Upload a CSV**")
+    table = _upload(f"{key}_csv")
     if table is None:
         return
     columns = list(table.columns)
-    id_choice = st.selectbox("Column with item ids", [AUTO_ID] + columns, key=f"more_id_{ws.id}",
+    id_choice = st.selectbox("Column with item ids", [AUTO_ID] + columns, key=f"{key}_id",
                              index=columns.index("id") + 1 if "id" in columns else 0)
-    plan = _split_controls(table, f"more_{ws.id}")
-    if st.button("Add batches", type="primary", key=f"more_add_{ws.id}"):
+    id_column = None if id_choice == AUTO_ID else id_choice
+    display = None
+    if not ws.projects[0].display:
+        rest = [c for c in columns if c != id_column]
+        display = st.multiselect("Columns annotators see", rest, default=rest, key=f"{key}_display")
+    plan = _split_controls(table, key)
+    if st.button("Add batches", type="primary", key=f"{key}_add"):
+        if display is not None and not display:
+            st.error("Choose at least one column to show.")
+            return
         try:
-            names = builder.add_data(ws, table, None if id_choice == AUTO_ID else id_choice, **plan)
+            names = builder.add_data(ws, table, id_column, display=display, **plan)
         except ValueError as exc:
             st.error(str(exc))
             return
         st.cache_resource.clear()
-        st.success(f"Added {len(names)} batch(es).")
+        st.session_state[version_key] = st.session_state.get(version_key, 0) + 1
+        st.session_state.builder_note = f"Added {len(names)} batch(es) to {ws.name}."
+        st.rerun()
 
 
-def render(ws: WorkspaceConfig | None, me: str) -> None:
-    if ws is not None and builder.is_app_project(ws):
-        _manage(ws)
-        st.divider()
-    _create(me)
+def _assign(ws: WorkspaceConfig) -> None:
+    st.markdown("**Batches and assignments**")
+    available = list_batches(ws)
+    if not available:
+        st.caption("No batches yet. Upload a CSV above.")
+        return
+    data = accounts.load_assignments(ws)
+    assigned = {b: [n for n, r in data.items() if b in r.get("batches", [])] for b in available}
+    rows = [{"Batch": b,
+             "Assigned to": ", ".join(f"{n} {batch_status(ws, n, b)['pct']}%" for n in assigned[b]) or "—"}
+            for b in available]
+    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+    open_batches = [b for b in available if not assigned[b]]
+    chosen = st.multiselect("Batches to assign", available, default=open_batches,
+                            key=f"give_b_{ws.id}", help="Starts with the batches nobody has yet.")
+    c1, c2 = st.columns([3, 1])
+    people = c1.multiselect("Annotators", _people(), key=f"give_p_{ws.id}")
+    per = c2.number_input("Annotators per batch", 1, 20, 1, key=f"give_n_{ws.id}")
+    if st.button("Assign", type="primary", key=f"give_save_{ws.id}", disabled=not (chosen and people)):
+        builder.assign(ws, chosen, people, int(per))
+        st.session_state.builder_note = f"Assigned {len(chosen)} batch(es)."
+        st.rerun()
+
+
+def _manage(ws: WorkspaceConfig) -> None:
+    if ws.projects[0].task == "choice":
+        _add_labels(ws)
+    _add_csv(ws)
+    st.divider()
+    _assign(ws)
+
+
+def render(workspaces: list[WorkspaceConfig], me: str) -> None:
+    note = st.session_state.pop("builder_note", None)
+    if note:
+        st.success(note)
+    projects = {w.id: w for w in workspaces if builder.is_app_project(w)}
+    with st.expander("New project", expanded=not projects):
+        _create(me)
+    if not projects:
+        return
+    ids = list(projects)
+    if st.session_state.get("manage_project") not in ids:
+        st.session_state.manage_project = ids[0]
+    picked = st.selectbox("Project", ids, key="manage_project", format_func=lambda i: projects[i].name)
+    _manage(projects[picked])

@@ -182,3 +182,17 @@ def test_first_visitor_becomes_admin(studio):
     assert not at.exception, at.exception
     assert at.session_state.logged_in and accounts.is_admin("owner", accounts.load_users())
     assert any(t.label == "Project name" for t in at.text_input)
+
+
+def test_create_button_works_without_a_csv(studio):
+    accounts.add_user("owner", "password1", "admin")
+    at = _login(AppTest.from_file(APP), "owner")
+    next(t for t in at.text_input if t.label == "Project name").input("Later")
+    next(t for t in at.text_area if "Label" in t.label).input("Yes\nNo")
+    at.run(timeout=30)
+    next(b for b in at.button if b.label == "Create project").click()
+    at.run(timeout=30)
+    assert not at.exception, at.exception
+    assert (accounts.paths.studio_home() / "projects" / "later").is_dir()
+    labels = [b.label for b in at.button]
+    assert "Add labels" in labels and "Create project" in labels
