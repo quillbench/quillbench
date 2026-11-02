@@ -4,7 +4,7 @@ import time
 import pandas as pd
 import pytest
 
-from labelwise import accounts, registry
+from labelwise import builder, accounts, registry
 from labelwise.config import ConfigError, load_workspace
 from labelwise.quality import cohen_kappa, krippendorff_alpha, report
 from labelwise.storage import (batch_status, get_progress_df, labeled_mask, list_batches, load_batch,
@@ -206,3 +206,53 @@ def test_unquoted_no_label_explained(workspace):
     (workspace / "labelwise_workspace.yaml").write_text(text)
     with pytest.raises(ConfigError, match="must be quoted"):
         load_workspace(workspace)
+
+
+def test_first_admin_only_once(studio):
+    accounts.create_first_admin("first", "password1")
+    assert accounts.is_admin("first", accounts.load_users())
+    with pytest.raises(ValueError):
+        accounts.create_first_admin("second", "password1")
+    assert "second" not in accounts.load_users()
+
+
+def _table(n=10):
+    return pd.DataFrame({"text": [f"item {i}" for i in range(n)]})
+
+
+def test_project_from_interface(studio):
+    accounts.add_user("a", "password1", "annotator")
+    accounts.add_user("b", "password1", "annotator")
+    table = builder.with_ids(_table(), None)
+    ws = builder.create_project("My Study!", "choice", "Pick one", table, ["text"], "me",
+                                batch_size=4, labels=["Yes", "No"], people=["a", "b"], per_batch=2)
+    assert ws.id == "my_study" and is_registered(ws)
+    assert list_batches(ws) == ["batch_001", "batch_002", "batch_003"]
+    assert len(load_batch(ws, "batch_003")) == 2
+    assert accounts.assigned_batches(ws, "a") == accounts.assigned_batches(ws, "b")
+    assert batch_status(ws, "a", "batch_001")["total"] == 4
+
+    builder.add_labels(ws, ["Maybe"])
+    assert [v for v in load_workspace(ws.root).projects[0].verdicts] == ["Yes", "No", "Maybe"]
+    assert builder.add_data(ws, _table(3), None) == ["batch_004"]
+    assert load_batch(ws, "batch_004")["id"].astype(str).tolist() == ["11", "12", "13"]
+    with pytest.raises(ValueError):
+        builder.add_data(ws, pd.DataFrame({"id": ["1"], "text": ["x"]}), "id")
+
+
+def test_interface_project_leaves_other_workspaces_alone(workspace):
+    registry.add(workspace)
+    before = (workspace / "labelwise_workspace.yaml").read_bytes()
+    ws = builder.create_project("demo", "text", "", builder.with_ids(_table(2), None), ["text"], "me")
+    assert ws.id == "demo_2" and not list(workspace.glob("labelwise_assign*"))
+    assert (workspace / "labelwise_workspace.yaml").read_bytes() == before
+
+
+def is_registered(ws):
+    return any(w.id == ws.id for w in registry.load_all()[0])
+
+
+def test_bad_project_leaves_nothing(studio):
+    with pytest.raises(ValueError):
+        builder.create_project("x", "choice", "", _table(1), ["text"], "me", labels=["only"])
+    assert not list(builder.projects_root().glob("*"))

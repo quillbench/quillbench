@@ -19,6 +19,14 @@ copy and the two are always in step.
 <paper>/labelwise_exports/<time>/          exports: answers.csv/.jsonl, agreement.csv, DATASHEET.md
 ```
 
+## Getting started in the browser
+
+Run `labelwise serve` and open the page. The first person to sign up becomes the admin, so do
+this yourself before sharing the address. Then, with no files to edit, the admin can use
+**Admin → Projects** to create a project, upload a CSV, set label buttons or a slider, split
+the items into batches and assign them. Add people under **Admin → People**, and follow the
+work in the **Progress** tab.
+
 ## Task types
 
 | task | what the annotator does |

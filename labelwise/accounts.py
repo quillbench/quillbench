@@ -122,6 +122,22 @@ def add_user(name: str, password: str, role: str = "annotator", display_name: st
     save_users(users, path)
 
 
+def create_first_admin(name: str, password: str, display_name: str = "") -> None:
+    """Make the first account an admin. Only ever works while no account exists."""
+    claim = paths.studio_home() / "first_admin.claim"
+    try:
+        fd = os.open(claim, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError:
+        raise ValueError("Setup is already being completed.") from None
+    os.close(fd)
+    try:
+        if load_users():
+            raise ValueError("An admin already exists.")
+        add_user(name, password, "admin", display_name)
+    finally:
+        claim.unlink(missing_ok=True)
+
+
 def set_password(name: str, password: str, path: Path | None = None) -> None:
     if len(password) < 8:
         raise ValueError("Use a password of at least 8 characters.")
