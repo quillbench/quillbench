@@ -1,0 +1,47 @@
+# A small rating study: how true is each statement, from 0 (false) to 1 (true)?
+#   labelwise workspace add examples/rating_demo
+#   labelwise user add demo
+#   labelwise assign demo rating_demo prac_demo_01 rate_demo_01
+workspace:
+  id: rating_demo
+  name: Rating demo
+  owner: Your Name
+  description: Graded truth of fuzzy air-quality statements.
+  batches_dir: batches
+  progress_dir: progress
+projects:
+  - &truth
+    id: truth_rating
+    name: How true is the statement?
+    task: rating
+    batch_prefix: rate_
+    scale:
+      min: 0
+      max: 1
+      step: 0.05
+      unsure_label: "Can't judge"
+      marks: {0: completely false, 0.25: slightly true, 0.5: half true, 0.75: mostly true, 1: completely true}
+    display:
+      - {field: statement, label: Statement}
+      - field: hourly
+        label: Hourly PM2.5 (µg/m³)
+        as: chart
+        chart:
+          kind: bar
+          x_label: hour
+          y_label: µg/m³
+          lines: [{value: 15.5, label: "moderate from 15.5"}, {value: 35.5, label: "unhealthy for sensitive from 35.5"}]
+      - {field: evidence, label: Summary}
+    instructions: |
+      Read the statement and look at the hourly readings. Move the slider to how **true**
+      the statement is, then press **Save** (or Enter). 0 = completely false, 1 = completely
+      true; values in between are expected when a word such as *mostly* only partly fits.
+      Use **Can't judge** rather than guessing.
+    checks:
+      r4: [0.0, 0.2]      # Sapporo, 6.1 µg/m³: clearly not "mostly moderate"
+  - <<: *truth
+    id: truth_practice
+    name: Practice — how true is the statement?
+    batch_prefix: prac_
+    practice: true
+    checks: {}

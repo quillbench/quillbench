@@ -1,0 +1,3 @@
+id,statement,evidence,hourly,expected,explanation
+p1,PM2.5 in Sapporo on 2023-07-02 was mostly moderate.,Daily mean 6.1 µg/m³; 0 of 24 hours between 15.5 and 35.5 (moderate).,"[4.7, 5.1, 4.7, 4.8, 4.8, 5.1, 5.2, 6.1, 7.4, 6.4, 6.7, 9.0, 8.1, 8.9, 8.9, 7.3, 9.7, 8.9, 7.3, 7.2, 6.2, 4.9, 5.0, 4.9]",0-0.15,"Every hour is below 15.5, so no hour is moderate: the statement is false."
+p2,PM2.5 in Tokyo on 2023-12-20 was mostly moderate.,Daily mean 24.7 µg/m³; 22 of 24 hours between 15.5 and 35.5 (moderate).,"[20.5, 18.5, 16.2, 20.4, 15.0, 20.9, 23.7, 21.6, 19.4, 24.3, 29.7, 32.4, 36.8, 30.1, 33.4, 35.0, 31.7, 23.8, 31.4, 33.8, 27.7, 19.7, 19.2, 19.2]",0.6-0.9,"Most hours sit between 15.5 and 35.5, a few are below: 'mostly' fits well but not perfectly."

@@ -1,0 +1,11 @@
+# Used when the app is started from this folder (labelwise serve sets the same values).
+[theme]
+base = "light"
+primaryColor = "#2B3A67"
+backgroundColor = "#F5F6FA"
+secondaryBackgroundColor = "#EEF1F6"
+textColor = "#1D2433"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
