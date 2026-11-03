@@ -1,0 +1,47 @@
+# Publishes to PyPI when a GitHub release is published. No token: PyPI trusts this
+# workflow through Trusted Publishing (owner quillbench, repo quillbench,
+# workflow publish.yml, environment pypi).
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test
+        run: |
+          pip install ".[test,ldap]"
+          pytest -q
+      - name: Check the release tag matches the version
+        run: |
+          version=$(python -c "import quillbench; print(quillbench.__version__)")
+          [ "${GITHUB_REF_NAME#v}" = "$version" ] || { echo "Tag $GITHUB_REF_NAME does not match version $version"; exit 1; }
+      - name: Build
+        run: |
+          pip install build twine
+          python -m build
+          twine check --strict dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

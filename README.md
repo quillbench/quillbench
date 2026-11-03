@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.githubusercontent.com/arjunpogaku/quillbench/main/docs/logo.svg" width="120" alt="QuillBench logo"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/quillbench/quillbench/main/docs/logo.svg" width="120" alt="QuillBench logo"></p>
 
 # QuillBench
 
@@ -27,7 +27,7 @@ quillbench serve --address 0.0.0.0     # let others on the network reach it
 ```
 
 Python 3.10 or newer. Answers and settings stay on the machine that runs `quillbench serve`.
-Free for academic, non-commercial use only; see [LICENSE](https://github.com/arjunpogaku/quillbench/blob/main/LICENSE).
+Free for academic, non-commercial use only; see [LICENSE](https://github.com/quillbench/quillbench/blob/main/LICENSE).
 
 ## Getting started in the browser
 
