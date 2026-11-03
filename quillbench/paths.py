@@ -15,10 +15,9 @@ from pathlib import Path
 def studio_home() -> Path:
     env = os.environ.get("QUILLBENCH_HOME") or os.environ.get("LABELWISE_HOME")
     home = Path(env).expanduser() if env else Path.home() / ".config" / "quillbench"
-    # installs made before the renames
-    for old in (Path.home() / ".config" / "labelwise", Path.home() / ".config" / "pogaku-annotation-studio"):
-        if not env and not home.exists() and old.exists():
-            home = old
+    old = Path.home() / ".config" / "labelwise"  # installs made before the rename
+    if not env and not home.exists() and old.exists():
+        home = old
     home.mkdir(parents=True, exist_ok=True)
     try:
         home.chmod(0o700)

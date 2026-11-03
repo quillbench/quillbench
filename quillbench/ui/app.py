@@ -28,7 +28,7 @@ from quillbench.settings import load_settings  # noqa: E402
 from quillbench.storage import batch_status  # noqa: E402
 from quillbench.ui import admin, console, dashboard, generic, query_review, shortcuts  # noqa: E402
 from quillbench.ui.session import emit_auth_cookie, expire_auth_cookie, restore_session  # noqa: E402
-from quillbench.ui.theme import inject_css, login_head, top_bar  # noqa: E402
+from quillbench.ui.theme import inject_css, login_brand, login_head, top_bar  # noqa: E402
 from quillbench.validate import validate_workspace  # noqa: E402
 
 
@@ -133,43 +133,50 @@ def visible_batches(ws, name: str) -> list[str]:
 # ── Sign-in: a card on the main page (on a phone the sidebar starts hidden) ──
 if not st.session_state.logged_in:
     with st.container(key="quillbench_login"):
-        login_head(settings.title, settings.subtitle)
-        if not users:
-            st.info("Welcome. This first account becomes the admin.")
-            with st.form("first_admin", border=False):
-                name_in = st.text_input("Choose a user ID").strip()
-                pass_in = st.text_input("Choose a password (8+ characters)", type="password")
-                if st.form_submit_button("Create admin account", width="stretch", type="primary"):
-                    try:
-                        accounts.create_first_admin(name_in, pass_in)
-                    except ValueError as exc:
-                        st.error(str(exc))
-                    else:
-                        st.session_state.logged_in = True
-                        st.session_state.annotator = name_in
-                        st.session_state.auth_issued = int(time.time())
-                        st.session_state.auth_epoch = 0
-                        st.rerun()
-            st.stop()
-        with st.form("login", border=False):
-            name_in = st.text_input("User ID", placeholder="Your assigned identifier")
-            pass_in = st.text_input("Password", type="password")
-            if st.form_submit_button("Sign in", width="stretch", type="primary"):
-                name_in = name_in.strip()
-                if accounts.login_locked(name_in):
-                    st.error("Too many wrong attempts. Try again in 15 minutes.")
-                elif accounts.sign_in(name_in, pass_in, users, settings.ldap):
-                    accounts.record_login(name_in, True)
-                    st.session_state.logged_in = True
-                    st.session_state.annotator = name_in
-                    st.session_state.auth_issued = int(time.time())
-                    st.session_state.auth_epoch = accounts.session_epoch(name_in, users)
-                    st.rerun()
-                else:
-                    accounts.record_login(name_in, False)
-                    st.error("Wrong user ID or password.")
-        st.markdown(f'<div class="quillbench-login-foot">{SHORT_NAME} {__version__} · © {AUTHOR}</div>',
-                    unsafe_allow_html=True)
+        brand, form = st.columns([1.05, 1])
+        with brand:
+            login_brand(settings.subtitle)
+        with form:
+            if not users:
+                login_head("Set up QuillBench", "This first account becomes the admin.")
+                with st.form("first_admin", border=False):
+                    name_in = st.text_input("Choose a user ID").strip()
+                    pass_in = st.text_input("Choose a password (8+ characters)", type="password")
+                    if st.form_submit_button("Create admin account", width="stretch", type="primary"):
+                        try:
+                            accounts.create_first_admin(name_in, pass_in)
+                        except ValueError as exc:
+                            st.error(str(exc))
+                        else:
+                            st.session_state.logged_in = True
+                            st.session_state.annotator = name_in
+                            st.session_state.auth_issued = int(time.time())
+                            st.session_state.auth_epoch = 0
+                            st.rerun()
+            else:
+                login_head("Welcome back", f"Sign in to {settings.title} to continue your work.")
+                with st.form("login", border=False):
+                    name_in = st.text_input("User ID", placeholder="Your assigned identifier")
+                    pass_in = st.text_input("Password", type="password", placeholder="••••••••")
+                    if st.form_submit_button("Sign in", width="stretch", type="primary"):
+                        name_in = name_in.strip()
+                        if accounts.login_locked(name_in):
+                            st.error("Too many wrong attempts. Try again in 15 minutes.")
+                        elif accounts.sign_in(name_in, pass_in, users, settings.ldap):
+                            accounts.record_login(name_in, True)
+                            st.session_state.logged_in = True
+                            st.session_state.annotator = name_in
+                            st.session_state.auth_issued = int(time.time())
+                            st.session_state.auth_epoch = accounts.session_epoch(name_in, users)
+                            st.rerun()
+                        else:
+                            accounts.record_login(name_in, False)
+                            st.error("Wrong user ID or password.")
+                help_text = ("Use your university login, or the one your study lead gave you."
+                             if settings.ldap else "No login yet? Ask your study lead for one.")
+                st.markdown(f'<div class="quillbench-login-help">{help_text}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="quillbench-login-foot">{SHORT_NAME} {__version__} · © {AUTHOR}</div>',
+                        unsafe_allow_html=True)
     st.stop()
 
 # ── Sidebar ───────────────────────────────────────────────────────────────

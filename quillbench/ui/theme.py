@@ -125,17 +125,90 @@ h3 { font-size: 1.05rem !important; }
 .quillbench-chip b { color: var(--heading); font-weight: 600; }
 .quillbench-chip.ws { background: var(--accent-bg); border-color: transparent; color: var(--accent); }
 
-/* ── Sign-in card ───────────────────────────────────────────────────── */
-.st-key-quillbench_login {
-    max-width: 400px; margin: 7vh auto 0; padding: 2rem 2rem 1.4rem;
-    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
-    box-shadow: 0 12px 32px var(--shadow);
+/* ── Sign-in page ───────────────────────────────────────────────────── */
+[data-testid="stAppViewContainer"]:has(.st-key-quillbench_login) {
+    background:
+        radial-gradient(900px 500px at 12% 8%, var(--accent-bg), transparent 60%),
+        radial-gradient(700px 420px at 92% 95%, var(--green-bg), transparent 60%),
+        var(--bg) !important;
 }
-.quillbench-login-head { text-align: center; margin-bottom: 1.1rem; }
-.quillbench-login-head .quillbench-mark { width: 3rem; height: 3rem; margin: 0 auto 0.8rem; border-radius: 11px; }
-.quillbench-login-head h1 { margin: 0; padding: 0; font-size: 1.35rem !important; }
-.quillbench-login-head p { margin: 0.25rem 0 0; color: var(--muted) !important; font-size: 0.86rem; }
-.quillbench-login-foot { text-align: center; color: var(--muted); font-size: 0.74rem; margin-top: 1rem; }
+.st-key-quillbench_login {
+    max-width: 880px; margin: 6vh auto 0; padding: 0; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: 0 24px 60px var(--shadow);
+    animation: qb-rise .6s cubic-bezier(.2,.8,.2,1) both;
+}
+.st-key-quillbench_login > div > [data-testid="stHorizontalBlock"] { gap: 0 !important; align-items: stretch; }
+.st-key-quillbench_login [data-testid="stColumn"]:first-child {
+    background: linear-gradient(160deg, #2B3A67 0%, #22305A 55%, #1B2749 100%);
+    padding: 2.6rem 2.2rem 2.2rem !important; position: relative; overflow: hidden;
+}
+.st-key-quillbench_login [data-testid="stColumn"]:first-child::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+    background-image: radial-gradient(rgba(255,255,255,.09) 1px, transparent 1px);
+    background-size: 18px 18px;
+}
+.st-key-quillbench_login [data-testid="stColumn"]:last-child { padding: 2.6rem 2.4rem 1.6rem !important; }
+.qb-brand { position: relative; z-index: 1; color: #fff; }
+.qb-logo { width: 5.2rem; height: 5.2rem; display: block; filter: drop-shadow(0 10px 18px rgba(0,0,0,.25)); }
+.qb-logo .tile { fill: #FFFFFF; fill-opacity: .1; stroke: rgba(255,255,255,.25); stroke-width: 1.5;
+                 transform-origin: 64px 64px; animation: qb-pop .55s .1s cubic-bezier(.2,.9,.3,1.3) both; }
+.qb-logo .quill { transform-origin: 34px 96px; animation: qb-quill-in .8s .35s cubic-bezier(.2,.8,.2,1) both,
+                  qb-write 5s 2.2s ease-in-out infinite; }
+.qb-logo .line { stroke: #2FA37C; stroke-width: 9; stroke-linecap: round; fill: none;
+                 stroke-dasharray: 1; stroke-dashoffset: 1; animation: qb-draw .7s 1.05s ease-out forwards; }
+.qb-word { font-family: var(--serif); color: #fff; font-size: 2.1rem; line-height: 1.15;
+           font-weight: 600; margin: 1.2rem 0 0; letter-spacing: -.01em;
+           animation: qb-fade-up .6s .9s both; }
+.qb-word .b { color: #7FD8B4 !important; }
+.qb-tag { color: rgba(255,255,255,.78) !important; margin: .35rem 0 1.6rem !important; font-size: .95rem;
+          animation: qb-fade-up .6s 1.05s both; }
+.qb-points { list-style: none; padding: 0; margin: 0; }
+.qb-points li { display: flex; gap: .7rem; align-items: flex-start; margin: 0 0 .85rem; color: rgba(255,255,255,.85);
+                font-size: .88rem; line-height: 1.45; animation: qb-fade-up .5s both; }
+.qb-points li:nth-child(1) { animation-delay: 1.2s; }
+.qb-points li:nth-child(2) { animation-delay: 1.32s; }
+.qb-points li:nth-child(3) { animation-delay: 1.44s; }
+.qb-points .dot { flex: none; width: 1.7rem; height: 1.7rem; border-radius: 8px; display: grid; place-items: center;
+                  background: rgba(255,255,255,.12); font-size: .85rem; transition: transform .2s, background .2s; }
+.qb-points li:hover .dot { transform: translateY(-2px) rotate(-6deg); background: rgba(127,216,180,.3); }
+.qb-points b { color: #fff; font-weight: 600; }
+.quillbench-login-head { margin-bottom: 1.2rem; animation: qb-fade-up .5s .25s both; }
+.quillbench-login-head h2 { margin: 0 !important; padding: 0 !important; font-size: 1.45rem !important; color: var(--heading) !important; }
+.quillbench-login-head p { margin: .3rem 0 0 !important; color: var(--muted) !important; font-size: .88rem; }
+.st-key-quillbench_login [data-testid="stForm"] { animation: qb-fade-up .5s .4s both; }
+.st-key-quillbench_login input { transition: box-shadow .2s, border-color .2s; }
+.st-key-quillbench_login [data-baseweb="input"]:focus-within { box-shadow: 0 0 0 3px var(--accent-bg); border-radius: 8px; }
+.st-key-quillbench_login [data-testid="stFormSubmitButton"] button {
+    min-height: 2.8rem; font-weight: 600; transition: transform .15s, box-shadow .2s;
+}
+.st-key-quillbench_login [data-testid="stFormSubmitButton"] button:hover {
+    transform: translateY(-1px); box-shadow: 0 8px 18px var(--shadow);
+}
+.st-key-quillbench_login [data-testid="stFormSubmitButton"] button:active { transform: translateY(0); }
+.quillbench-login-help { color: var(--muted); font-size: .8rem; margin-top: .9rem; line-height: 1.5; }
+.quillbench-login-foot { color: var(--muted); font-size: .74rem; margin-top: 1.4rem; padding-top: .9rem;
+                         border-top: 1px solid var(--line); }
+@keyframes qb-rise { from { opacity: 0; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes qb-pop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes qb-quill-in { from { opacity: 0; transform: translate(26px, -30px) rotate(18deg); } to { opacity: 1; transform: none; } }
+@keyframes qb-write { 0%, 70%, 100% { transform: none; } 76% { transform: translateX(3px) rotate(-3deg); }
+                      82% { transform: translateX(-2px) rotate(2deg); } 88% { transform: translateX(2px) rotate(-1deg); } }
+@keyframes qb-draw { to { stroke-dashoffset: 0; } }
+@keyframes qb-fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+    .st-key-quillbench_login, .st-key-quillbench_login *, .qb-logo * { animation: none !important; }
+    .qb-logo .line { stroke-dashoffset: 0; }
+}
+@media (max-width: 760px) {
+    .st-key-quillbench_login { margin: 1vh auto 0; border-radius: 14px; }
+    .st-key-quillbench_login [data-testid="stColumn"]:first-child { padding: 1.6rem 1.4rem 1.2rem !important; }
+    .st-key-quillbench_login [data-testid="stColumn"]:last-child { padding: 1.6rem 1.4rem 1.2rem !important; }
+    .qb-logo { width: 3.6rem; height: 3.6rem; }
+    .qb-word { font-size: 1.6rem; margin-top: .8rem; }
+    .qb-tag { margin-bottom: .8rem !important; }
+    .qb-points { display: none; }
+}
 
 /* ── Sidebar ────────────────────────────────────────────────────────── */
 [data-testid="stSidebar"] { background: var(--sidebar-bg); border-right: 1px solid var(--line); }
@@ -270,7 +343,6 @@ h3 { font-size: 1.05rem !important; }
     .quillbench-top { gap: 0.5rem; padding-bottom: 0.6rem; }
     .st-key-quillbench_item { padding: 0.8rem 0.85rem 0.4rem; border-radius: 12px; }
     .nl-question { font-size: 1.08rem; padding-left: 0.75rem; }
-    .st-key-quillbench_login { margin-top: 2vh; padding: 1.5rem 1.2rem 1rem; }
     /* Work bar: batch and progress full width, Instructions and Settings side by side */
     .st-key-quillbench_workbar [data-testid="stHorizontalBlock"] { flex-direction: row !important; flex-wrap: wrap !important; gap: 0.5rem !important; }
     .st-key-quillbench_workbar [data-testid="stColumn"] { min-width: calc(50% - 0.25rem) !important; width: calc(50% - 0.25rem) !important; flex: 1 1 calc(50% - 0.25rem) !important; }
@@ -338,8 +410,7 @@ def top_bar(title: str, subtitle: str, workspace: str = "", user: str = "") -> N
         chips += f'<span class="quillbench-chip ws">{html.escape(workspace)}</span>'
     if user:
         chips += f'<span class="quillbench-chip">● <b>{html.escape(user)}</b></span>'
-    # The mark already reads "QuillBench"; repeating the title beside it would say it twice.
-    name = "" if title.strip().upper() == "QuillBench" else html.escape(title)
+    name = html.escape(title)
     st.markdown(
         f'<div class="quillbench-top">{_logo()}'
         f'<div class="quillbench-name">{name or html.escape(subtitle)}'
@@ -349,10 +420,38 @@ def top_bar(title: str, subtitle: str, workspace: str = "", user: str = "") -> N
     )
 
 
-def login_head(title: str, subtitle: str) -> None:
+_QUILL = (
+    '<svg class="qb-logo" viewBox="0 0 128 128" aria-hidden="true">'
+    '<rect class="tile" x="1" y="1" width="126" height="126" rx="28"/>'
+    '<g class="quill">'
+    '<path d="M100 22C70 26 47 44 38 76l-4 14 8-4c30-8 48-30 58-64z" fill="#FFFFFF"/>'
+    '<path d="M94 30L38 88" stroke="#2B3A67" stroke-width="3.5" stroke-linecap="round" fill="none"/>'
+    '<path d="M39 86l-9 13" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" fill="none"/>'
+    '</g>'
+    '<path class="line" d="M24 104h80" pathLength="1"/>'
+    '</svg>'
+)
+
+
+def login_brand(subtitle: str) -> None:
+    """The left panel of the sign-in page: the logo draws itself in, then the name."""
     st.markdown(
-        f'<div class="quillbench-login-head">{_logo()}'
-        f'<h1>Sign in to {html.escape(title)}</h1><p>{html.escape(subtitle)}</p></div>',
+        f'<div class="qb-brand">{_QUILL}'
+        '<div class="qb-word">Quill<span class="b">Bench</span></div>'
+        f'<p class="qb-tag">{html.escape(subtitle)}</p>'
+        '<ul class="qb-points">'
+        '<li><span class="dot">✎</span><span><b>Label</b> each item with one click or one key.</span></li>'
+        '<li><span class="dot">⇄</span><span><b>Pick up where you left off</b> on any device.</span></li>'
+        '<li><span class="dot">✓</span><span><b>Build benchmarks</b> people can trust, with agreement measured for you.</span></li>'
+        '</ul></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def login_head(heading: str, text: str) -> None:
+    st.markdown(
+        f'<div class="quillbench-login-head"><h2>{html.escape(heading)}</h2>'
+        f'<p>{html.escape(text)}</p></div>',
         unsafe_allow_html=True,
     )
 

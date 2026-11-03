@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quillbench"
-version = "1.3.0"
+version = "1.4.0"
 description = "QuillBench: config-driven human annotation for research datasets, one workspace per paper."
 authors = [{ name = "A.C. Pogaku" }]
 license = { file = "LICENSE" }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.0 — 2026-11-03
+
+- New sign-in page: the logo draws itself in, with a short welcome and a clearer form. It works
+  on phones and respects the system's reduce-motion setting.
+- The top bar shows the logo and the full name.
+
 ## 1.3.0 — 2026-11-03
 
 - Optional sign-in with LDAP or Active Directory accounts (`pip install "quillbench[ldap]"`
