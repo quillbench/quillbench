@@ -1,16 +1,15 @@
-<p align="center"><img src="docs/logo.svg" width="120" alt="QuillBench logo"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/arjunpogaku/quillbench/main/docs/logo.svg" width="120" alt="QuillBench logo"></p>
 
 # QuillBench
 
 Build benchmark datasets with human annotators. A config-driven annotation platform for research, by **A.C. Pogaku**.
 
-The software lives in this folder. Each paper keeps its own annotation data in its own
+Each paper keeps its own annotation data in its own
 folder, a **workspace**, described by one `quillbench_workspace.yaml` file. The studio reads
 that file and writes answers straight into the paper's folders, so there is nothing to
 copy and the two are always in step.
 
 ```
-~/quillbench/          the software (this repo)
 ~/.config/quillbench/  private studio state: registry, accounts (hashed), settings
 <paper>/quillbench_workspace.yaml           one paper's projects
 <paper>/batches/*.csv|*.jsonl        items to annotate, one file per batch
@@ -18,6 +17,17 @@ copy and the two are always in step.
 <paper>/quillbench_assignments.json         who works on which batch (no secrets)
 <paper>/quillbench_exports/<time>/          exports: answers.csv/.jsonl, agreement.csv, DATASHEET.md
 ```
+
+## Install
+
+```
+pip install quillbench
+quillbench serve                       # this computer only: http://localhost:8560/quillbench/
+quillbench serve --address 0.0.0.0     # let others on the network reach it
+```
+
+Python 3.10 or newer. Answers and settings stay on the machine that runs `quillbench serve`.
+Free for academic, non-commercial use only; see [LICENSE](https://github.com/arjunpogaku/quillbench/blob/main/LICENSE).
 
 ## Getting started in the browser
 

@@ -5,11 +5,28 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "quillbench"
 version = "1.4.0"
-description = "QuillBench: config-driven human annotation for research datasets, one workspace per paper."
+description = "Build benchmark datasets with human annotators: a config-driven annotation platform for research."
+readme = "README.md"
+keywords = ["annotation", "labeling", "benchmark", "dataset", "human evaluation", "streamlit", "research"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: Other/Proprietary License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Framework :: Streamlit",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 authors = [{ name = "A.C. Pogaku" }]
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = ["streamlit>=1.50,<2.0", "pandas>=2.0,<3.0", "PyYAML>=6.0,<7.0", "neo4j>=5.0,<7.0"]
+
+[project.urls]
+Homepage = "https://github.com/arjunpogaku/quillbench"
+Source = "https://github.com/arjunpogaku/quillbench"
+Changelog = "https://github.com/arjunpogaku/quillbench/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 test = ["pytest>=7"]
