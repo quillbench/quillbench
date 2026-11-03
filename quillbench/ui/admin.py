@@ -7,6 +7,7 @@ import streamlit as st
 
 from .. import accounts, backup, export
 from ..config import WorkspaceConfig
+from .. import ldap_auth
 from ..settings import StudioSettings, save_archived_projects, save_setting
 from ..storage import batch_status, list_batches
 from . import builder as project_builder
@@ -21,7 +22,7 @@ def render(ws: WorkspaceConfig, workspaces: list[WorkspaceConfig], me: str,
     with t_assign:
         _assignments(ws)
     with t_people:
-        _people(me)
+        _people(me, ldap_auth.enabled(settings.ldap))
     with t_ws:
         _workspaces(workspaces, settings)
     with t_export:
@@ -70,11 +71,12 @@ def _assignments(ws: WorkspaceConfig) -> None:
         st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True, height=380)
 
 
-def _people(me: str) -> None:
+def _people(me: str, ldap_on: bool = False) -> None:
     users = accounts.load_users()
     st.caption("Accounts are shared by all workspaces and stored with hashed passwords in the "
                "studio's private folder.")
     rows = [{"User ID": n, "Name": r.get("display_name", n), "Role": r.get("role"),
+             "Sign-in": "University" if r.get("source") == "ldap" and not r.get("password_hash") else "Password",
              "Active": r.get("active", True)} for n, r in sorted(users.items())]
     st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
 
@@ -84,11 +86,17 @@ def _people(me: str) -> None:
         with st.form("add_user", clear_on_submit=True):
             uid = st.text_input("User ID")
             name = st.text_input("Display name")
+            uni = ldap_on and st.checkbox("Signs in with their university login", value=True,
+                                          help="Their university password is checked by LDAP; leave "
+                                               "the password below empty.")
             pw = st.text_input("Password (8+ characters)", type="password")
             role = st.selectbox("Role", accounts.ROLES)
             if st.form_submit_button("Add", width="stretch"):
                 try:
-                    accounts.add_user(uid, pw, role, name)
+                    if uni:
+                        accounts.add_ldap_user(uid, role, name)
+                    else:
+                        accounts.add_user(uid, pw, role, name)
                     st.success(f"Added {uid}.")
                     st.rerun()
                 except ValueError as exc:

@@ -149,6 +149,8 @@ def cmd_user(a):
         for name, r in sorted(accounts.load_users().items()):
             print(f"{name:24s} {r.get('role', ''):10s} {'active' if r.get('active', True) else 'disabled':9s}"
                   f" {r.get('display_name', '')}")
+    elif a.action == "add" and a.ldap:
+        accounts.add_ldap_user(a.name, "admin" if a.admin else "annotator", a.display or "")
     elif a.action == "add":
         accounts.add_user(a.name, _password(), "admin" if a.admin else "annotator", a.display or "")
         print(f"Added {a.name}.")
@@ -267,6 +269,7 @@ def main(argv=None):
     s.add_argument("action", choices=["list", "add", "passwd", "role", "disable", "enable"])
     s.add_argument("name", nargs="?"); s.add_argument("value", nargs="?")
     s.add_argument("--admin", action="store_true"); s.add_argument("--display")
+    s.add_argument("--ldap", action="store_true", help="signs in with their university (LDAP) password")
     s.set_defaults(fn=cmd_user)
     s = sub.add_parser("assign"); s.add_argument("user"); s.add_argument("workspace")
     s.add_argument("batches", nargs="+"); s.add_argument("--remove", action="store_true")

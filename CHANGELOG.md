@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.2 — 2026-11-03
+
+- Step-by-step guide for installing on an Ubuntu server: `docs/install-ubuntu.md`.
+- Admins can add people who sign in with their university (LDAP) login: Admin → People, or
+  `quillbench user add ID --ldap`.
+
 ## 1.4.1 — 2026-11-03
 
 - First release on PyPI: `pip install quillbench`.

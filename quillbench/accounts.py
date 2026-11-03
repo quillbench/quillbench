@@ -122,6 +122,21 @@ def add_user(name: str, password: str, role: str = "annotator", display_name: st
     save_users(users, path)
 
 
+def add_ldap_user(name: str, role: str = "annotator", display_name: str = "",
+                  path: Path | None = None) -> None:
+    """An account that signs in with its university (LDAP) password; none is stored here."""
+    name = name.strip()
+    if not ldap_auth.USER_RE.match(name):
+        raise ValueError("A university user id may use only letters, digits, '.', '_' and '-'.")
+    if role not in ROLES:
+        raise ValueError(f"role must be one of {ROLES}")
+    users = load_users(path)
+    if name in users:
+        raise ValueError(f"User '{name}' already exists.")
+    users[name] = {"role": role, "display_name": display_name or name, "active": True, "source": "ldap"}
+    save_users(users, path)
+
+
 def create_first_admin(name: str, password: str, display_name: str = "") -> None:
     """Make the first account an admin. Only ever works while no account exists."""
     claim = paths.studio_home() / "first_admin.claim"
