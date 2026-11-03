@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 — 2026-11-03
+
+- Renamed to QuillBench: the package, the `quillbench` command, the `QUILLBENCH_HOME` setting
+  and the new `quillbench_workspace.yaml` manifests.
+- Earlier installs keep working: `labelwise_workspace.yaml`, `labelwise_assignments.json`,
+  `~/.config/labelwise` and `LABELWISE_HOME` are still read.
+- New quill logo.
+
 ## 1.1.1 — 2026-11-02
 
 - Admin → Projects: create a project without a CSV, upload CSVs at any time, split them into

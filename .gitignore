@@ -1,14 +1,14 @@
 # Annotation data never lives in this repo: it stays in each paper's workspace.
 progress/
-labelwise_exports/
+quillbench_exports/
 pas_exports/
-labelwise_assignments*.json
+quillbench_assignments*.json
 pas_assignments*.json
 examples/*/progress/
 # Secrets
 .env
 *.secret
-labelwise.env
+quillbench.env
 pas.env
 # Python
 __pycache__/

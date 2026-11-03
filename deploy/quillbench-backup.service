@@ -1,0 +1,7 @@
+[Unit]
+Description=QuillBench nightly backup
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/quillbench
+ExecStart=/opt/miniforge3/bin/python3 -m quillbench backup

@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "labelwise"
-version = "1.1.1"
-description = "Labelwise: config-driven human annotation for research datasets, one workspace per paper."
+name = "quillbench"
+version = "1.2.0"
+description = "QuillBench: config-driven human annotation for research datasets, one workspace per paper."
 authors = [{ name = "A.C. Pogaku" }]
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
@@ -15,13 +15,13 @@ dependencies = ["streamlit>=1.50,<2.0", "pandas>=2.0,<3.0", "PyYAML>=6.0,<7.0", 
 test = ["pytest>=7"]
 
 [project.scripts]
-labelwise = "labelwise.cli:main"
+quillbench = "quillbench.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["labelwise*"]
+include = ["quillbench*"]
 
 [tool.setuptools.package-data]
-"labelwise.ui" = ["assets/*"]
+"quillbench.ui" = ["assets/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

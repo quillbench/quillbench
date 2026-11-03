@@ -1,7 +1,7 @@
 """
 One-command export of a workspace's answers for release or analysis.
 
-Writes ``<workspace>/labelwise_exports/<timestamp>/``:
+Writes ``<workspace>/quillbench_exports/<timestamp>/``:
 
 * ``answers.csv`` and ``answers.jsonl`` -- one row per (annotator, item);
 * ``agreement.csv`` -- alpha per project;
@@ -96,7 +96,7 @@ def export(ws: WorkspaceConfig, project_ids: list[str] | None = None, *,
     n_people = data["annotator"].nunique() if not data.empty else 0
     (out / "DATASHEET.md").write_text(
         f"# {ws.name} — annotation export\n\n"
-        f"Exported {stamp} UTC with Labelwise {__version__}.\n\n"
+        f"Exported {stamp} UTC with QuillBench {__version__}.\n\n"
         f"- Workspace: `{ws.id}` ({ws.description or 'no description'})\n"
         f"- Owner: {ws.owner or '—'}\n"
         f"- Answers: {len(data)} from {n_people} annotators\n"
@@ -104,7 +104,7 @@ def export(ws: WorkspaceConfig, project_ids: list[str] | None = None, *,
         f"- Notes: {'included as written — read them before publishing' if include_notes else 'removed'}\n\n"
         f"## Columns\n\n"
         f"`project`, `task`, `annotator`, `batch`, `id` (item), `value` (the answer), `note`, "
-        f"`seconds` (time the item was open when answered; blank for answers recorded before Labelwise), "
+        f"`seconds` (time the item was open when answered; blank for answers recorded before QuillBench), "
         f"`updated_at` (UTC), `is_check_item`.\n\n"
         f"## Projects\n\n" + "\n".join(sections),
         encoding="utf-8",

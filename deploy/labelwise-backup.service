@@ -1,7 +1,0 @@
-[Unit]
-Description=Labelwise nightly backup
-
-[Service]
-Type=oneshot
-WorkingDirectory=%h/labelwise
-ExecStart=/opt/miniforge3/bin/python3 -m labelwise backup

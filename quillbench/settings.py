@@ -12,18 +12,18 @@ from . import SHORT_NAME, paths
 
 @dataclass(frozen=True)
 class StudioSettings:
-    # The interface says only "Labelwise"; the full name is kept for the docs.
+    # The interface says only "QuillBench"; the full name is kept for the docs.
     title: str = SHORT_NAME
     subtitle: str = "Human annotation for research datasets"
-    brand: str = "Labelwise"
+    brand: str = "QuillBench"
     footnote: str = ""
-    cookie_name: str = "labelwise_auth"
+    cookie_name: str = "quillbench_auth"
     session_max_age_days: int = 30
     display_row_cap: int = 300
     query_timeout_seconds: int = 30
     port: int = 8560
-    base_url_path: str = "labelwise"
-    backup_dir: Path = Path.home() / "labelwise_backups"
+    base_url_path: str = "quillbench"
+    backup_dir: Path = Path.home() / "quillbench_backups"
     backup_keep: int = 14
     # project ids hidden from annotators, per workspace: {workspace_id: [project_id, ...]}
     archived_projects: dict = field(default_factory=dict)

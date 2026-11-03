@@ -13,7 +13,7 @@ Two files, two owners:
   extra dependency).
 
 * **Assignments** -- what a person works on in a paper -- live in that paper's
-  workspace (``labelwise_assignments.json``), so they travel with the paper's data and
+  workspace (``quillbench_assignments.json``), so they travel with the paper's data and
   contain no secrets::
 
       {"alice": {"batches": ["demo_001", "demo_002"]}}

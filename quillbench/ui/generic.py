@@ -188,10 +188,10 @@ def render(ws: WorkspaceConfig, annotator: str, active_batch: str, bar,
     qid = row["id"]
     seconds_open = item_timer(active_batch, qid)
     current = blank_if_nan(row.get("human_verdict", ""))
-    feedback = st.session_state.get("labelwise_feedback")
+    feedback = st.session_state.get("quillbench_feedback")
     showing_feedback = project.practice and feedback and feedback[:2] == (active_batch, str(qid))
 
-    with st.container(key="labelwise_item"):
+    with st.container(key="quillbench_item"):
         item_nav(df, idx, total, labeled, skip_labeled, active_batch, project)
         local = blank_if_nan(row.get("local_id", "")) or idx + 1
         badges = f'<span class="meta-badge primary">Item {html.escape(str(local))}</span>'
@@ -226,12 +226,12 @@ def render(ws: WorkspaceConfig, annotator: str, active_batch: str, bar,
         set_verdict(ws, annotator, active_batch, qid, value, note_val, batch_df,
                     seconds=seconds_open)
         if project.practice:
-            st.session_state["labelwise_feedback"] = (active_batch, str(qid), value)
+            st.session_state["quillbench_feedback"] = (active_batch, str(qid), value)
         else:
             st.session_state.query_idx = find_step(total, idx, labeled, True, skip_labeled)
         st.rerun()
 
-    with st.container(key="labelwise_answerbar"):
+    with st.container(key="quillbench_answerbar"):
         if spec.kind == "rating":
             _rating_bar(spec, current, active_batch, qid, total, idx, labeled, skip_labeled, save)
         elif spec.kind == "labels":

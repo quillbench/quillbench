@@ -1,5 +1,5 @@
 [Unit]
-Description=Back up Labelwise answers every night at 02:30
+Description=Back up QuillBench answers every night at 02:30
 
 [Timer]
 OnCalendar=*-*-* 02:30:00

@@ -4,12 +4,12 @@ import time
 import pandas as pd
 import pytest
 
-from labelwise import builder, accounts, registry
-from labelwise.config import ConfigError, load_workspace
-from labelwise.quality import cohen_kappa, krippendorff_alpha, report
-from labelwise.storage import (batch_status, get_progress_df, labeled_mask, list_batches, load_batch,
+from quillbench import builder, accounts, registry
+from quillbench.config import ConfigError, load_workspace
+from quillbench.quality import cohen_kappa, krippendorff_alpha, report
+from quillbench.storage import (batch_status, get_progress_df, labeled_mask, list_batches, load_batch,
                          progress_path, progress_summary_rows, set_verdict)
-from labelwise.validate import validate_workspace
+from quillbench.validate import validate_workspace
 
 
 # ── accounts ─────────────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ def test_login_throttle():
 
 
 def test_write_guard_sees_through_comments_and_backticks():
-    from labelwise.graphdb import write_guard_reason
+    from quillbench.graphdb import write_guard_reason
 
     assert write_guard_reason("LOAD/**/CSV FROM 'file:///etc/passwd' AS r RETURN r")
     assert write_guard_reason("CALL/**/apoc.export.csv.all('x', {})")
@@ -81,15 +81,15 @@ def test_routing(workspace):
 
 
 def test_two_defaults_rejected(workspace):
-    text = (workspace / "labelwise_workspace.yaml").read_text().replace("task: rating", "task: rating\n    default: true")
-    (workspace / "labelwise_workspace.yaml").write_text(text)
+    text = (workspace / "quillbench_workspace.yaml").read_text().replace("task: rating", "task: rating\n    default: true")
+    (workspace / "quillbench_workspace.yaml").write_text(text)
     with pytest.raises(ConfigError, match="more than one"):
         load_workspace(workspace)
 
 
 def test_unknown_task_rejected(workspace):
-    text = (workspace / "labelwise_workspace.yaml").read_text().replace("task: choice", "task: vibes")
-    (workspace / "labelwise_workspace.yaml").write_text(text)
+    text = (workspace / "quillbench_workspace.yaml").read_text().replace("task: choice", "task: vibes")
+    (workspace / "quillbench_workspace.yaml").write_text(text)
     with pytest.raises(ConfigError, match="task must be one of"):
         load_workspace(workspace)
 
@@ -180,7 +180,7 @@ def test_registry_and_export(workspace, studio):
     batch = load_batch(ws, "pick_01")
     set_verdict(ws, "alice", "pick_01", "p0", "YES", "a note", batch)
     set_verdict(ws, "bob", "pick_01", "p0", "NO", "", batch)
-    from labelwise.export import export
+    from quillbench.export import export
 
     out = export(ws)
     data = pd.read_csv(out / "answers.csv")
@@ -194,16 +194,16 @@ def test_broken_manifest_does_not_hide_others(workspace, tmp_path, studio):
     registry.add(workspace)
     bad = tmp_path / "bad"
     bad.mkdir()
-    (bad / "labelwise_workspace.yaml").write_text("workspace: {id: bad}\nprojects: []\n")
-    reg = registry.manifest_paths() + [bad / "labelwise_workspace.yaml"]
+    (bad / "quillbench_workspace.yaml").write_text("workspace: {id: bad}\nprojects: []\n")
+    reg = registry.manifest_paths() + [bad / "quillbench_workspace.yaml"]
     registry._write(reg)
     loaded, problems = registry.load_all()
     assert [w.id for w in loaded] == ["demo"] and len(problems) == 1
 
 
 def test_unquoted_no_label_explained(workspace):
-    text = (workspace / "labelwise_workspace.yaml").read_text().replace('"NO"', "NO")
-    (workspace / "labelwise_workspace.yaml").write_text(text)
+    text = (workspace / "quillbench_workspace.yaml").read_text().replace('"NO"', "NO")
+    (workspace / "quillbench_workspace.yaml").write_text(text)
     with pytest.raises(ConfigError, match="must be quoted"):
         load_workspace(workspace)
 
@@ -242,10 +242,10 @@ def test_project_from_interface(studio):
 
 def test_interface_project_leaves_other_workspaces_alone(workspace):
     registry.add(workspace)
-    before = (workspace / "labelwise_workspace.yaml").read_bytes()
+    before = (workspace / "quillbench_workspace.yaml").read_bytes()
     ws = builder.create_project("demo", "text", "", builder.with_ids(_table(2), None), ["text"], "me")
-    assert ws.id == "demo_2" and not list(workspace.glob("labelwise_assign*"))
-    assert (workspace / "labelwise_workspace.yaml").read_bytes() == before
+    assert ws.id == "demo_2" and not list(workspace.glob("quillbench_assign*"))
+    assert (workspace / "quillbench_workspace.yaml").read_bytes() == before
 
 
 def is_registered(ws):

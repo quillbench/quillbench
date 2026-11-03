@@ -3,7 +3,7 @@
 Everything that belongs to a paper -- batches, progress, assignments, exports --
 lives in that paper's workspace folder. The studio home only holds what is shared
 across papers: the workspace registry, annotator identities, the session secret,
-and studio settings. ``$LABELWISE_HOME`` overrides the location (used by the tests).
+and studio settings. ``$QUILLBENCH_HOME`` overrides the location (used by the tests).
 """
 
 from __future__ import annotations
@@ -13,8 +13,12 @@ from pathlib import Path
 
 
 def studio_home() -> Path:
-    env = os.environ.get("LABELWISE_HOME")
-    home = Path(env).expanduser() if env else Path.home() / ".config" / "labelwise"
+    env = os.environ.get("QUILLBENCH_HOME") or os.environ.get("LABELWISE_HOME")
+    home = Path(env).expanduser() if env else Path.home() / ".config" / "quillbench"
+    # installs made before the renames
+    for old in (Path.home() / ".config" / "labelwise", Path.home() / ".config" / "pogaku-annotation-studio"):
+        if not env and not home.exists() and old.exists():
+            home = old
     home.mkdir(parents=True, exist_ok=True)
     try:
         home.chmod(0o700)

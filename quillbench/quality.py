@@ -7,7 +7,7 @@ Annotation quality: agreement, check items and time per item.
 * Check items: a project's ``checks:`` map (item id -> expected answer) hidden
   among the real items. A rating check may be a number (within one scale step),
   a ``[low, high]`` range, or ``{value: 0.8, tolerance: 0.15}``.
-* Median seconds per item, from the ``seconds`` column Labelwise records.
+* Median seconds per item, from the ``seconds`` column QuillBench records.
 
 Skipped items, blanks and "UNSURE" answers are left out of agreement.
 """

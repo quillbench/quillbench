@@ -1,6 +1,6 @@
 # Versions below are the ones this tool is developed and tested against.
 # Upper bounds are deliberate: Streamlit's internal DOM structure changes
-# between minor releases, and several CSS rules in labelwise/ui/theme.py target
+# between minor releases, and several CSS rules in quillbench/ui/theme.py target
 # `data-testid` attributes that are not a public API. Verify the Annotation
 # tab visually after any Streamlit upgrade.
 streamlit>=1.50,<2.0        # tested against 1.60.0; needs the width="stretch" API
