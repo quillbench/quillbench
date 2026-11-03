@@ -29,6 +29,8 @@ class StudioSettings:
     archived_projects: dict = field(default_factory=dict)
     # workspace ids hidden from annotators (their data is untouched)
     archived_workspaces: list = field(default_factory=list)
+    # optional LDAP / Active Directory sign-in, see ldap_auth.py
+    ldap: dict = field(default_factory=dict)
 
 
 def load_settings(path: Path | None = None) -> StudioSettings:

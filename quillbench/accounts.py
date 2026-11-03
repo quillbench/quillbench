@@ -41,7 +41,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import paths
+from . import ldap_auth, paths
 from .config import WorkspaceConfig
 
 ROLES = ("annotator", "admin")
@@ -182,6 +182,32 @@ def check_login(name: str, password: str, users: dict) -> bool:
         return False
     ok = verify_password(password, str(record.get("password_hash", "")))
     return ok and record.get("active", True)
+
+
+def sign_in(name: str, password: str, users: dict, ldap: dict | None = None) -> bool:
+    """Check a sign-in against QuillBench's own accounts, then LDAP when it is set up.
+
+    An account with its own password always uses it, so LDAP can never take over a
+    local account. A person LDAP accepts for the first time gets an annotator
+    account (no password stored) when ``auto_create`` is on, or must already have
+    been added by an admin.
+    """
+    record = users.get(name)
+    if not ldap_auth.enabled(ldap) or (isinstance(record, dict) and record.get("password_hash")):
+        return check_login(name, password, users)
+    if isinstance(record, dict) and not record.get("active", True):
+        return False
+    if record is None and not ldap.get("auto_create", True):
+        verify_password(password, _DUMMY_HASH)
+        return False
+    if not ldap_auth.check(name, password, ldap):
+        return False
+    if record is None:
+        users = load_users()
+        if name not in users:
+            users[name] = {"role": "annotator", "display_name": name, "active": True, "source": "ldap"}
+            save_users(users)
+    return True
 
 
 # ──────────────────────────────────────────────────────────────────────────

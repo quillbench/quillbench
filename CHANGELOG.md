@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0 — 2026-11-03
+
+- Optional sign-in with LDAP or Active Directory accounts (`pip install "quillbench[ldap]"`
+  and an `ldap` block in settings.yaml). Local accounts work as before.
+- `quillbench connect ADDRESS` and `quillbench open`: annotators install QuillBench, connect
+  to their group's server once, and open it with one command.
+- Fixed: the `quillbench` command was missing from the package, so `quillbench serve` and the
+  other commands did not work after installing from GitHub.
+
 ## 1.2.0 — 2026-11-03
 
 - Renamed to QuillBench: the package, the `quillbench` command, the `QUILLBENCH_HOME` setting
