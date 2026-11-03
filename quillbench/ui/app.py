@@ -158,7 +158,7 @@ if not st.session_state.logged_in:
                 name_in = name_in.strip()
                 if accounts.login_locked(name_in):
                     st.error("Too many wrong attempts. Try again in 15 minutes.")
-                elif accounts.check_login(name_in, pass_in, users):
+                elif accounts.sign_in(name_in, pass_in, users, settings.ldap):
                     accounts.record_login(name_in, True)
                     st.session_state.logged_in = True
                     st.session_state.annotator = name_in

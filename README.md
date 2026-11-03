@@ -73,6 +73,40 @@ display:
 practice: true      # show each item's 'expected' and 'explanation' columns after answering
 ```
 
+## For annotators: connect to a server
+
+If someone runs QuillBench for your group, you only need the address they give you:
+
+```
+pip install quillbench
+quillbench connect annotate.example.edu/quillbench
+```
+
+This checks the server, remembers it and opens the sign-in page. Next time, run
+`quillbench open`. Sign in with the login you were given (or your university login, if the
+server uses LDAP). Your answers are saved on the server, not on your computer.
+
+## Signing in with university (LDAP) accounts
+
+QuillBench has its own accounts. A server can also accept the logins people already have,
+from LDAP or Active Directory. Install the extra package and add an `ldap` block to
+`settings.yaml` in the studio home:
+
+```
+pip install "quillbench[ldap]"
+```
+
+```yaml
+ldap:
+  url: ldaps://ldap.example.edu                         # or ldap:// with start_tls: true
+  user_dn: "uid={user},ou=people,dc=example,dc=edu"     # Active Directory: "{user}@example.edu"
+  auto_create: true     # first sign-in makes an annotator account; false = admins add people first
+```
+
+Passwords are checked by the LDAP server and never stored by QuillBench. Accounts with their
+own QuillBench password keep using it. Admins still assign batches and can disable anyone in
+Admin → People. Use `ldaps://` or `start_tls`, so passwords are not sent in plain text.
+
 ## Running as a service
 
 ```bash
