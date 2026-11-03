@@ -116,3 +116,13 @@ def test_command_line_has_its_commands(capsys):
         cli.main(["--help"])
     out = capsys.readouterr().out
     assert all(c in out for c in ("serve", "user", "connect", "open"))
+
+
+def test_admin_adds_a_university_user(studio, fake_ldap):
+    accounts.add_ldap_user("stud1")
+    record = accounts.load_users()["stud1"]
+    assert record["source"] == "ldap" and "password_hash" not in record
+    conf = {**LDAP, "auto_create": False}
+    assert accounts.sign_in("stud1", "studpass1", accounts.load_users(), conf)
+    with pytest.raises(ValueError):
+        accounts.add_ldap_user("bad name")

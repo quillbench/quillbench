@@ -20,6 +20,9 @@ copy and the two are always in step.
 
 ## Install
 
+Setting up a shared server for a group? Follow the step-by-step
+[Ubuntu server guide](https://github.com/quillbench/quillbench/blob/main/docs/install-ubuntu.md).
+
 ```
 pip install quillbench
 quillbench serve                       # this computer only: http://localhost:8560/quillbench/
