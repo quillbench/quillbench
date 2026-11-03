@@ -24,9 +24,9 @@ requires-python = ">=3.10"
 dependencies = ["streamlit>=1.50,<2.0", "pandas>=2.0,<3.0", "PyYAML>=6.0,<7.0", "neo4j>=5.0,<7.0"]
 
 [project.urls]
-Homepage = "https://github.com/arjunpogaku/quillbench"
-Source = "https://github.com/arjunpogaku/quillbench"
-Changelog = "https://github.com/arjunpogaku/quillbench/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/quillbench/quillbench"
+Source = "https://github.com/quillbench/quillbench"
+Changelog = "https://github.com/quillbench/quillbench/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 test = ["pytest>=7"]
