@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.1 — 2026-11-03
+
+- First release on PyPI: `pip install quillbench`.
+
 ## 1.4.0 — 2026-11-03
 
 - New sign-in page: the logo draws itself in, with a short welcome and a clearer form. It works
