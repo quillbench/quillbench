@@ -1,11 +1,11 @@
-"""Labelwise.
+"""QuillBench.
 
 A config-driven human-annotation platform for research datasets. The software lives
 in its own folder; every paper keeps its annotation data in its own folder (a
-*workspace*), described by a ``labelwise_workspace.yaml`` manifest that the studio reads.
+*workspace*), described by a ``quillbench_workspace.yaml`` manifest that the studio reads.
 """
 
-__version__ = "1.1.1"
-NAME = "Labelwise"
-SHORT_NAME = "Labelwise"
+__version__ = "1.2.0"
+NAME = "QuillBench"
+SHORT_NAME = "QuillBench"
 AUTHOR = "A.C. Pogaku"

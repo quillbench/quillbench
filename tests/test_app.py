@@ -7,10 +7,10 @@ import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from labelwise import accounts, registry
-from labelwise.config import load_workspace
+from quillbench import accounts, registry
+from quillbench.config import load_workspace
 
-APP = str(Path(__file__).resolve().parents[1] / "labelwise" / "ui" / "app.py")
+APP = str(Path(__file__).resolve().parents[1] / "quillbench" / "ui" / "app.py")
 
 
 @pytest.fixture
@@ -143,7 +143,7 @@ def test_next_batch_after_finishing(ready):
     at.session_state["active_batch"] = "b_01"
     at = _login(at, "alice")
     assert any("Batch complete" in m.value for m in at.markdown)
-    _button(at, "labelwise_next_batch").click()
+    _button(at, "quillbench_next_batch").click()
     at.run(timeout=30)
     assert at.session_state.active_batch in ("rate_01", "pick_01")
 
@@ -157,9 +157,9 @@ def test_opens_first_unfinished_batch(ready):
 
 
 def test_practice_feedback(ready):
-    text = (ready / "labelwise_workspace.yaml").read_text().replace(
+    text = (ready / "quillbench_workspace.yaml").read_text().replace(
         "    checks: {c1: [0.9, 1.0]}", "    practice: true")
-    (ready / "labelwise_workspace.yaml").write_text(text)
+    (ready / "quillbench_workspace.yaml").write_text(text)
     (ready / "batches" / "rate_01.csv").write_text(
         "id,question,context,expected,explanation\nq1,Is it hot?,x,0.8-1.0,36 degrees is hot.\n")
     at = _login(AppTest.from_file(APP), "alice")

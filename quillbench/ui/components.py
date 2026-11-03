@@ -30,12 +30,12 @@ def toolbar(bar, project: ProjectConfig, n_labeled: int, total: int, *, box_size
     with bar[1]:
         progress_chip(n_labeled, total)
     with bar[2]:
-        with st.popover("Instructions", width="stretch", key="labelwise_pop_instructions",
+        with st.popover("Instructions", width="stretch", key="quillbench_pop_instructions",
                         disabled=not project.instructions.strip()):
             st.markdown(project.instructions or "No instructions for this project.")
     with bar[3]:
-        with st.popover("Settings", width="stretch", key="labelwise_pop_settings"):
-            skip = st.checkbox("Previous/Next skip answered items", key="labelwise_skip_answered")
+        with st.popover("Settings", width="stretch", key="quillbench_pop_settings"):
+            skip = st.checkbox("Previous/Next skip answered items", key="quillbench_skip_answered")
             if box_sizes:
                 st.session_state.setdefault("ui_cypher_h", 320)
                 st.session_state.setdefault("ui_result_h", 400)
@@ -71,7 +71,7 @@ def item_nav(df: pd.DataFrame, idx: int, total: int, labeled: pd.Series, skip: b
         local = (blank_if_nan(row["local_id"]) or i + 1) if has_local else i + 1
         return f"{glyph}  Item {local}  ·  {i + 1} of {total}"
 
-    nav = st.container(key="labelwise_nav")
+    nav = st.container(key="quillbench_nav")
     c1, c2, c3 = nav.columns([1, 4, 1], vertical_alignment="center")
     with c1:
         if st.button("← Previous", width="stretch", key=f"nav_prev_{batch}", disabled=idx == 0):
@@ -146,7 +146,7 @@ def done_card(n_labeled: int, total: int, next_batch: str | None) -> None:
         card("done", "✓ Batch complete", body)
     with c2:
         if next_batch and st.button(f"Next batch →", type="primary", width="stretch",
-                                    help=f"Open {next_batch}", key="labelwise_next_batch"):
+                                    help=f"Open {next_batch}", key="quillbench_next_batch"):
             st.session_state.active_batch = next_batch
             st.session_state.query_idx = 0
             st.rerun()
@@ -186,7 +186,7 @@ def practice_feedback(project: ProjectConfig, row, value: str, total: int, idx: 
         card("good" if ok else "bad", title,
              f"You answered <b>{html.escape(value)}</b>; the reference is <b>{html.escape(shown)}</b>."
              + (f"<br>{why}" if why else ""))
-    if st.button("Next practice item →", type="primary", key="labelwise_practice_next"):
-        st.session_state.pop("labelwise_feedback", None)
+    if st.button("Next practice item →", type="primary", key="quillbench_practice_next"):
+        st.session_state.pop("quillbench_feedback", None)
         st.session_state.query_idx = find_step(total, idx, labeled, True, False)
         st.rerun()

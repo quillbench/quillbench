@@ -3,7 +3,7 @@ Data access: items, gold caches (whole or sharded), batches and progress files.
 
 Progress files stay in the workspace as plain CSV --
 ``<progress_dir>/<annotator>__<batch>.csv`` with ``human_verdict``, ``note`` and
-``paraphrase`` columns -- so existing annotation records read unchanged. Labelwise adds
+``paraphrase`` columns -- so existing annotation records read unchanged. QuillBench adds
 two columns when an item is answered, ``updated_at`` (UTC, ISO 8601) and
 ``seconds`` (time the item was open), and writes every file atomically.
 
@@ -154,7 +154,7 @@ def gold_cache_missing_reason(project: ProjectConfig, batch_name: str) -> str | 
     return (
         f"No precomputed result shard for batch '{batch_name}'. Expected file: "
         f"{shard}. Regenerate with: "
-        f"python -m labelwise.shard_gold_cache --project {project.id}"
+        f"python -m quillbench.shard_gold_cache --project {project.id}"
     )
 
 

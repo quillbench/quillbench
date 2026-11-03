@@ -1,5 +1,5 @@
 """
-Look and feel of Labelwise: two palettes, the stylesheet, and the
+Look and feel of QuillBench: two palettes, the stylesheet, and the
 small HTML pieces (top bar, sign-in card, progress chip) the screens share.
 
 Colours are CSS custom properties, so every rule is written once and the light
@@ -108,34 +108,34 @@ h3 { font-size: 1.05rem !important; }
 }
 
 /* ── Top bar ─────────────────────────────────────────────────────────── */
-.labelwise-top {
+.quillbench-top {
     display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap;
     padding: 0.55rem 0.2rem 0.85rem; margin-bottom: 0.4rem; border-bottom: 1px solid var(--line);
 }
-.labelwise-mark {
+.quillbench-mark {
     width: 2.15rem; height: 2.15rem; border-radius: 8px; flex: none;
     display: block;
 }
-.labelwise-name { font-family: var(--serif); font-size: 1.12rem; font-weight: 600; color: var(--heading); line-height: 1.1; }
-.labelwise-name small { display: block; font: 500 0.72rem/1.4 var(--sans); color: var(--muted); letter-spacing: 0.02em; }
-.labelwise-top .spacer { flex: 1; }
-.labelwise-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.28rem 0.7rem;
+.quillbench-name { font-family: var(--serif); font-size: 1.12rem; font-weight: 600; color: var(--heading); line-height: 1.1; }
+.quillbench-name small { display: block; font: 500 0.72rem/1.4 var(--sans); color: var(--muted); letter-spacing: 0.02em; }
+.quillbench-top .spacer { flex: 1; }
+.quillbench-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.28rem 0.7rem;
             border: 1px solid var(--line); border-radius: 999px; background: var(--surface);
             font-size: 0.8rem; color: var(--ink); white-space: nowrap; }
-.labelwise-chip b { color: var(--heading); font-weight: 600; }
-.labelwise-chip.ws { background: var(--accent-bg); border-color: transparent; color: var(--accent); }
+.quillbench-chip b { color: var(--heading); font-weight: 600; }
+.quillbench-chip.ws { background: var(--accent-bg); border-color: transparent; color: var(--accent); }
 
 /* ── Sign-in card ───────────────────────────────────────────────────── */
-.st-key-labelwise_login {
+.st-key-quillbench_login {
     max-width: 400px; margin: 7vh auto 0; padding: 2rem 2rem 1.4rem;
     background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
     box-shadow: 0 12px 32px var(--shadow);
 }
-.labelwise-login-head { text-align: center; margin-bottom: 1.1rem; }
-.labelwise-login-head .labelwise-mark { width: 3rem; height: 3rem; margin: 0 auto 0.8rem; border-radius: 11px; }
-.labelwise-login-head h1 { margin: 0; padding: 0; font-size: 1.35rem !important; }
-.labelwise-login-head p { margin: 0.25rem 0 0; color: var(--muted) !important; font-size: 0.86rem; }
-.labelwise-login-foot { text-align: center; color: var(--muted); font-size: 0.74rem; margin-top: 1rem; }
+.quillbench-login-head { text-align: center; margin-bottom: 1.1rem; }
+.quillbench-login-head .quillbench-mark { width: 3rem; height: 3rem; margin: 0 auto 0.8rem; border-radius: 11px; }
+.quillbench-login-head h1 { margin: 0; padding: 0; font-size: 1.35rem !important; }
+.quillbench-login-head p { margin: 0.25rem 0 0; color: var(--muted) !important; font-size: 0.86rem; }
+.quillbench-login-foot { text-align: center; color: var(--muted); font-size: 0.74rem; margin-top: 1rem; }
 
 /* ── Sidebar ────────────────────────────────────────────────────────── */
 [data-testid="stSidebar"] { background: var(--sidebar-bg); border-right: 1px solid var(--line); }
@@ -161,15 +161,15 @@ h3 { font-size: 1.05rem !important; }
 [data-testid="stTable"] tbody tr:nth-child(odd) td { background: var(--surface2) !important; }
 
 /* ── Work bar: batch, progress, instructions, settings ──────────────── */
-.labelwise-progress { display: flex; flex-direction: column; gap: 0.3rem; padding-top: 0.2rem; }
-.labelwise-progress .row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); }
-.labelwise-progress .row b { color: var(--heading); font-weight: 600; }
-.labelwise-progress .track { height: 8px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
-.labelwise-progress .fill { height: 100%; border-radius: 999px; background: var(--accent); }
-.labelwise-progress .fill.done { background: var(--green); }
+.quillbench-progress { display: flex; flex-direction: column; gap: 0.3rem; padding-top: 0.2rem; }
+.quillbench-progress .row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); }
+.quillbench-progress .row b { color: var(--heading); font-weight: 600; }
+.quillbench-progress .track { height: 8px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
+.quillbench-progress .fill { height: 100%; border-radius: 999px; background: var(--accent); }
+.quillbench-progress .fill.done { background: var(--green); }
 
 /* ── Item card ──────────────────────────────────────────────────────── */
-.st-key-labelwise_item {
+.st-key-quillbench_item {
     background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
     padding: 1rem 1.2rem 0.6rem; box-shadow: 0 2px 10px var(--shadow);
 }
@@ -185,7 +185,7 @@ h3 { font-size: 1.05rem !important; }
 .field-label { font-size: 0.74rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
                color: var(--muted); margin: 0.6rem 0 0.25rem; }
 .field-text { font-size: 1rem; line-height: 1.6; color: var(--ink); margin-bottom: 0.4rem; }
-.st-key-labelwise_item [data-testid="stTextArea"] { margin-top: 0.5rem; }
+.st-key-quillbench_item [data-testid="stTextArea"] { margin-top: 0.5rem; }
 .nav-legend { font-size: 0.78rem; color: var(--muted); line-height: 1.9; }
 .kbd { display: inline-block; min-width: 1.4em; padding: 0 0.35em; border: 1px solid var(--line); border-bottom-width: 2px;
        border-radius: 5px; background: var(--surface); font: 600 0.75rem/1.5 var(--mono); text-align: center; color: var(--heading); }
@@ -194,9 +194,9 @@ h3 { font-size: 1.05rem !important; }
 /* Streamlit wraps the keyed container in a layer of exactly its own height, so the
    sticky rule has to sit on that wrapper or the bar has no room to stick. */
 @media (min-width: 641px) {
-    [data-testid="stLayoutWrapper"]:has(> .st-key-labelwise_answerbar) { position: sticky; bottom: 0.5rem; z-index: 20; }
+    [data-testid="stLayoutWrapper"]:has(> .st-key-quillbench_answerbar) { position: sticky; bottom: 0.5rem; z-index: 20; }
 }
-.st-key-labelwise_answerbar {
+.st-key-quillbench_answerbar {
     margin-top: 0.6rem;
     background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
     padding: 0.75rem 0.9rem 0.55rem; box-shadow: 0 -6px 22px var(--shadow);
@@ -228,10 +228,10 @@ h3 { font-size: 1.05rem !important; }
 [class*="st-key-rating_save_"] button { min-height: 2.75rem; }
 
 /* Rating read-out and word marks (the slider's own end labels would repeat them) */
-.st-key-labelwise_answerbar [data-testid="stSliderTickBar"],
-.st-key-labelwise_answerbar [data-testid="stSliderTickBarMin"],
-.st-key-labelwise_answerbar [data-testid="stSliderTickBarMax"],
-.st-key-labelwise_answerbar [data-testid="stSliderThumbValue"] { display: none; }
+.st-key-quillbench_answerbar [data-testid="stSliderTickBar"],
+.st-key-quillbench_answerbar [data-testid="stSliderTickBarMin"],
+.st-key-quillbench_answerbar [data-testid="stSliderTickBarMax"],
+.st-key-quillbench_answerbar [data-testid="stSliderThumbValue"] { display: none; }
 [data-testid="stBaseButton-primary"]:disabled { opacity: 0.4; cursor: not-allowed; }
 .rating-readout { display: flex; align-items: baseline; gap: 0.7rem; margin: 0.1rem 0 -0.2rem; }
 .rating-readout .num { font: 700 2.1rem/1 var(--sans); color: var(--accent); font-variant-numeric: tabular-nums; }
@@ -245,12 +245,12 @@ h3 { font-size: 1.05rem !important; }
 .rating-marks span.last { transform: translateX(-100%); text-align: right; } .rating-marks span.last::before { margin-right: 0; }
 
 /* Feedback (practice) and completion cards */
-.labelwise-card { border-radius: 12px; padding: 0.9rem 1.1rem; margin: 0.4rem 0 0.6rem; border: 1px solid var(--line); background: var(--surface); }
-.labelwise-card.good { background: var(--green-bg); border-color: transparent; }
-.labelwise-card.bad { background: var(--red-bg); border-color: transparent; }
-.labelwise-card.done { background: var(--green-bg); border-color: transparent; }
-.labelwise-card .title { font-weight: 700; color: var(--heading); margin-bottom: 0.2rem; }
-.labelwise-card .body { color: var(--ink); font-size: 0.92rem; line-height: 1.55; }
+.quillbench-card { border-radius: 12px; padding: 0.9rem 1.1rem; margin: 0.4rem 0 0.6rem; border: 1px solid var(--line); background: var(--surface); }
+.quillbench-card.good { background: var(--green-bg); border-color: transparent; }
+.quillbench-card.bad { background: var(--red-bg); border-color: transparent; }
+.quillbench-card.done { background: var(--green-bg); border-color: transparent; }
+.quillbench-card .title { font-weight: 700; color: var(--heading); margin-bottom: 0.2rem; }
+.quillbench-card .body { color: var(--ink); font-size: 0.92rem; line-height: 1.55; }
 
 /* Gate/collision call-outs keep Streamlit's alert styling */
 [data-testid="stAlert"] { border-radius: var(--radius) !important; }
@@ -262,29 +262,29 @@ h3 { font-size: 1.05rem !important; }
 /* ── Phones ─────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
     .block-container { padding: 0.6rem 0.7rem 6rem !important; }
-    .labelwise-name small, .labelwise-top .spacer { display: none; }
+    .quillbench-name small, .quillbench-top .spacer { display: none; }
     [data-testid="stHeader"] { height: 2rem; }
-    .labelwise-mark { width: 1.8rem; height: 1.8rem; }
-    .labelwise-name { font-size: 1rem; }
-    .labelwise-chip { padding: 0.18rem 0.55rem; font-size: 0.74rem; }
-    .labelwise-top { gap: 0.5rem; padding-bottom: 0.6rem; }
-    .st-key-labelwise_item { padding: 0.8rem 0.85rem 0.4rem; border-radius: 12px; }
+    .quillbench-mark { width: 1.8rem; height: 1.8rem; }
+    .quillbench-name { font-size: 1rem; }
+    .quillbench-chip { padding: 0.18rem 0.55rem; font-size: 0.74rem; }
+    .quillbench-top { gap: 0.5rem; padding-bottom: 0.6rem; }
+    .st-key-quillbench_item { padding: 0.8rem 0.85rem 0.4rem; border-radius: 12px; }
     .nl-question { font-size: 1.08rem; padding-left: 0.75rem; }
-    .st-key-labelwise_login { margin-top: 2vh; padding: 1.5rem 1.2rem 1rem; }
+    .st-key-quillbench_login { margin-top: 2vh; padding: 1.5rem 1.2rem 1rem; }
     /* Work bar: batch and progress full width, Instructions and Settings side by side */
-    .st-key-labelwise_workbar [data-testid="stHorizontalBlock"] { flex-direction: row !important; flex-wrap: wrap !important; gap: 0.5rem !important; }
-    .st-key-labelwise_workbar [data-testid="stColumn"] { min-width: calc(50% - 0.25rem) !important; width: calc(50% - 0.25rem) !important; flex: 1 1 calc(50% - 0.25rem) !important; }
-    .st-key-labelwise_workbar [data-testid="stColumn"]:nth-child(-n+2) { min-width: 100% !important; width: 100% !important; flex-basis: 100% !important; }
+    .st-key-quillbench_workbar [data-testid="stHorizontalBlock"] { flex-direction: row !important; flex-wrap: wrap !important; gap: 0.5rem !important; }
+    .st-key-quillbench_workbar [data-testid="stColumn"] { min-width: calc(50% - 0.25rem) !important; width: calc(50% - 0.25rem) !important; flex: 1 1 calc(50% - 0.25rem) !important; }
+    .st-key-quillbench_workbar [data-testid="stColumn"]:nth-child(-n+2) { min-width: 100% !important; width: 100% !important; flex-basis: 100% !important; }
     /* Item navigation: jump box on its own line, Previous and Next side by side */
-    .st-key-labelwise_nav [data-testid="stHorizontalBlock"] { flex-direction: row !important; flex-wrap: wrap !important; gap: 0.5rem !important; }
-    .st-key-labelwise_nav [data-testid="stColumn"] { min-width: calc(50% - 0.25rem) !important; width: calc(50% - 0.25rem) !important; flex: 1 1 calc(50% - 0.25rem) !important; }
-    .st-key-labelwise_nav [data-testid="stColumn"]:nth-child(2) { order: -1; min-width: 100% !important; width: 100% !important; flex-basis: 100% !important; }
-    .labelwise-progress { margin-bottom: 0.5rem; }
+    .st-key-quillbench_nav [data-testid="stHorizontalBlock"] { flex-direction: row !important; flex-wrap: wrap !important; gap: 0.5rem !important; }
+    .st-key-quillbench_nav [data-testid="stColumn"] { min-width: calc(50% - 0.25rem) !important; width: calc(50% - 0.25rem) !important; flex: 1 1 calc(50% - 0.25rem) !important; }
+    .st-key-quillbench_nav [data-testid="stColumn"]:nth-child(2) { order: -1; min-width: 100% !important; width: 100% !important; flex-basis: 100% !important; }
+    .quillbench-progress { margin-bottom: 0.5rem; }
     .rating-marks span.minor { display: none; }
     /* Answer buttons two per row rather than one per row */
-    .st-key-labelwise_answerbar { padding: 0.6rem 0.7rem 0.4rem; }
-    .st-key-labelwise_answerbar [data-testid="stHorizontalBlock"] { flex-direction: row !important; flex-wrap: wrap !important; gap: 0.4rem !important; }
-    .st-key-labelwise_answerbar [data-testid="stColumn"] { min-width: calc(50% - 0.2rem) !important; width: calc(50% - 0.2rem) !important; flex: 1 1 calc(50% - 0.2rem) !important; }
+    .st-key-quillbench_answerbar { padding: 0.6rem 0.7rem 0.4rem; }
+    .st-key-quillbench_answerbar [data-testid="stHorizontalBlock"] { flex-direction: row !important; flex-wrap: wrap !important; gap: 0.4rem !important; }
+    .st-key-quillbench_answerbar [data-testid="stColumn"] { min-width: calc(50% - 0.2rem) !important; width: calc(50% - 0.2rem) !important; flex: 1 1 calc(50% - 0.2rem) !important; }
     [class*="st-key-verdict_"] button, [class*="st-key-rating_save_"] button { min-height: 3rem; }
     .rating-readout .num { font-size: 1.8rem; }
 }
@@ -323,7 +323,7 @@ textarea::placeholder, input::placeholder { opacity: 0.55; }
 
 def _logo() -> str:
     data = base64.b64encode((Path(__file__).parent / "assets" / "logo.svg").read_bytes()).decode()
-    return f'<img class="labelwise-mark" alt="Labelwise" src="data:image/svg+xml;base64,{data}">'
+    return f'<img class="quillbench-mark" alt="QuillBench" src="data:image/svg+xml;base64,{data}">'
 
 
 def inject_css() -> None:
@@ -335,14 +335,14 @@ def inject_css() -> None:
 def top_bar(title: str, subtitle: str, workspace: str = "", user: str = "") -> None:
     chips = ""
     if workspace:
-        chips += f'<span class="labelwise-chip ws">{html.escape(workspace)}</span>'
+        chips += f'<span class="quillbench-chip ws">{html.escape(workspace)}</span>'
     if user:
-        chips += f'<span class="labelwise-chip">● <b>{html.escape(user)}</b></span>'
-    # The mark already reads "Labelwise"; repeating the title beside it would say it twice.
-    name = "" if title.strip().upper() == "Labelwise" else html.escape(title)
+        chips += f'<span class="quillbench-chip">● <b>{html.escape(user)}</b></span>'
+    # The mark already reads "QuillBench"; repeating the title beside it would say it twice.
+    name = "" if title.strip().upper() == "QuillBench" else html.escape(title)
     st.markdown(
-        f'<div class="labelwise-top">{_logo()}'
-        f'<div class="labelwise-name">{name or html.escape(subtitle)}'
+        f'<div class="quillbench-top">{_logo()}'
+        f'<div class="quillbench-name">{name or html.escape(subtitle)}'
         f'{f"<small>{html.escape(subtitle)}</small>" if name else ""}</div>'
         f'<div class="spacer"></div>{chips}</div>',
         unsafe_allow_html=True,
@@ -351,7 +351,7 @@ def top_bar(title: str, subtitle: str, workspace: str = "", user: str = "") -> N
 
 def login_head(title: str, subtitle: str) -> None:
     st.markdown(
-        f'<div class="labelwise-login-head">{_logo()}'
+        f'<div class="quillbench-login-head">{_logo()}'
         f'<h1>Sign in to {html.escape(title)}</h1><p>{html.escape(subtitle)}</p></div>',
         unsafe_allow_html=True,
     )
@@ -360,7 +360,7 @@ def login_head(title: str, subtitle: str) -> None:
 def progress_chip(done: int, total: int) -> None:
     pct = round(done / total * 100) if total else 0
     st.markdown(
-        f'<div class="labelwise-progress"><div class="row"><span>Progress</span>'
+        f'<div class="quillbench-progress"><div class="row"><span>Progress</span>'
         f'<span><b>{done}</b> / {total} · {pct}%</span></div>'
         f'<div class="track"><div class="fill{" done" if pct == 100 else ""}" '
         f'style="width:{pct}%"></div></div></div>',
@@ -370,5 +370,5 @@ def progress_chip(done: int, total: int) -> None:
 
 def card(kind: str, title: str, body: str = "") -> None:
     """``body`` is trusted HTML built by the caller (escape item text first)."""
-    st.markdown(f'<div class="labelwise-card {kind}"><div class="title">{title}</div>'
+    st.markdown(f'<div class="quillbench-card {kind}"><div class="title">{title}</div>'
                 f'<div class="body">{body}</div></div>', unsafe_allow_html=True)

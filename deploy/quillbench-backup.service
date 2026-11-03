@@ -1,0 +1,7 @@
+[Unit]
+Description=QuillBench nightly backup
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/quillbench
+ExecStart=%h/quillbench-env/bin/python -m quillbench backup

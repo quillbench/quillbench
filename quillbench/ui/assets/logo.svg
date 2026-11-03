@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="QuillBench">
+  <rect width="128" height="128" rx="28" fill="#2B3A67"/>
+  <path d="M100 22C70 26 47 44 38 76l-4 14 8-4c30-8 48-30 58-64z" fill="#FFFFFF"/>
+  <path d="M94 30L38 88" fill="none" stroke="#2B3A67" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M39 86l-9 13" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <path d="M24 104h80" fill="none" stroke="#2FA37C" stroke-width="9" stroke-linecap="round"/>
+</svg>

@@ -1,5 +1,5 @@
 """
-``labelwise validate``: check that every declared input exists and is well-formed.
+``quillbench validate``: check that every declared input exists and is well-formed.
 
 Eager on purpose: a missing benchmark CSV must be a loud message before
 annotators sign in, never a blank annotation screen later. Problems are
@@ -70,7 +70,7 @@ def validate_workspace(ws: WorkspaceConfig, users: dict | None = None) -> tuple[
                     errors.append(f"{where}: gold_cache.file is not usable: {exc}")
             else:
                 warnings.append(f"{where}: gold_cache.file is {f.stat().st_size / 1e6:.0f} MB; "
-                                f"consider sharding it (python -m labelwise.shard_gold_cache).")
+                                f"consider sharding it (python -m quillbench.shard_gold_cache).")
         elif proj.gold_cache_shard_dir is not None:
             d = proj.gold_cache_shard_dir
             if not d.is_dir():

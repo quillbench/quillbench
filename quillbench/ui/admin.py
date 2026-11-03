@@ -145,8 +145,8 @@ def _workspaces(workspaces: list[WorkspaceConfig], settings: StudioSettings) -> 
                 st.cache_resource.clear()
                 st.success("Saved.")
                 st.rerun()
-    st.caption("Add a new paper from the command line: `labelwise init-workspace <folder>` then "
-               "`labelwise workspace add <folder>`.")
+    st.caption("Add a new paper from the command line: `quillbench init-workspace <folder>` then "
+               "`quillbench workspace add <folder>`.")
 
 
 def _export(ws: WorkspaceConfig) -> None:

@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT))
 def studio(tmp_path, monkeypatch):
     """A private studio home for the test."""
     home = tmp_path / "studio"
-    monkeypatch.setenv("LABELWISE_HOME", str(home))
+    monkeypatch.setenv("QUILLBENCH_HOME", str(home))
     return home
 
 
@@ -51,7 +51,7 @@ projects:
 def workspace(tmp_path, studio):
     root = tmp_path / "paper"
     (root / "batches").mkdir(parents=True)
-    (root / "labelwise_workspace.yaml").write_text(MANIFEST)
+    (root / "quillbench_workspace.yaml").write_text(MANIFEST)
     (root / "batches" / "rate_01.csv").write_text(
         "id,question,context\nq1,Is it hot?,**36 °C**\nq2,Is it cold?,2 °C\nc1,Check item,x\n")
     with (root / "batches" / "pick_01.jsonl").open("w") as f:

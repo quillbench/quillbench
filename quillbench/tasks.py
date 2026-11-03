@@ -5,7 +5,7 @@ A task type says what the annotator records for an item and how the item is laid
 out. Each one is a ``TaskSpec``; the annotation screen, the progress counts, the
 quality statistics and the exports all read the spec instead of branching on the
 task name. Adding a task type means adding a spec here (and, only if it needs a new
-layout, a view in ``labelwise/ui``).
+layout, a view in ``quillbench/ui``).
 
 Two families:
 

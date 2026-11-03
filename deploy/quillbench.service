@@ -1,0 +1,20 @@
+# systemd user unit for QuillBench.
+#   cp deploy/quillbench.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now quillbench
+# Keeps running after logout only with lingering on: sudo loginctl enable-linger $USER
+[Unit]
+Description=QuillBench
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/quillbench
+# Graph passwords for the Query Console (NEO4J_PASSWORD, ...), mode 600.
+EnvironmentFile=-%h/.config/quillbench/quillbench.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=%h/quillbench-env/bin/python -m quillbench serve
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

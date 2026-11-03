@@ -1,7 +1,7 @@
 # A small rating study: how true is each statement, from 0 (false) to 1 (true)?
-#   labelwise workspace add examples/rating_demo
-#   labelwise user add demo
-#   labelwise assign demo rating_demo prac_demo_01 rate_demo_01
+#   quillbench workspace add examples/rating_demo
+#   quillbench user add demo
+#   quillbench assign demo rating_demo prac_demo_01 rate_demo_01
 workspace:
   id: rating_demo
   name: Rating demo

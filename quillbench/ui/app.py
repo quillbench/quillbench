@@ -1,7 +1,7 @@
 """
-Labelwise -- the web app.
+QuillBench -- the web app.
 
-    labelwise serve            (or: streamlit run labelwise/ui/app.py)
+    quillbench serve            (or: streamlit run quillbench/ui/app.py)
 
 The studio serves every workspace listed in its registry. Each workspace's
 manifest is read on load; answers are written straight into that paper's own
@@ -23,13 +23,13 @@ if str(_ROOT) not in sys.path:
 
 import streamlit as st  # noqa: E402
 
-from labelwise import AUTHOR, SHORT_NAME, __version__, accounts, paths, registry  # noqa: E402
-from labelwise.settings import load_settings  # noqa: E402
-from labelwise.storage import batch_status  # noqa: E402
-from labelwise.ui import admin, console, dashboard, generic, query_review, shortcuts  # noqa: E402
-from labelwise.ui.session import emit_auth_cookie, expire_auth_cookie, restore_session  # noqa: E402
-from labelwise.ui.theme import inject_css, login_head, top_bar  # noqa: E402
-from labelwise.validate import validate_workspace  # noqa: E402
+from quillbench import AUTHOR, SHORT_NAME, __version__, accounts, paths, registry  # noqa: E402
+from quillbench.settings import load_settings  # noqa: E402
+from quillbench.storage import batch_status  # noqa: E402
+from quillbench.ui import admin, console, dashboard, generic, query_review, shortcuts  # noqa: E402
+from quillbench.ui.session import emit_auth_cookie, expire_auth_cookie, restore_session  # noqa: E402
+from quillbench.ui.theme import inject_css, login_head, top_bar  # noqa: E402
+from quillbench.validate import validate_workspace  # noqa: E402
 
 
 def _stamp() -> tuple:
@@ -46,7 +46,7 @@ def _load(stamp: tuple):
     return settings, workspaces, problems, checks
 
 
-from labelwise.ui import builder as project_builder  # noqa: E402
+from quillbench.ui import builder as project_builder  # noqa: E402
 
 settings, workspaces, load_problems, checks = _load(_stamp())
 
@@ -132,7 +132,7 @@ def visible_batches(ws, name: str) -> list[str]:
 
 # ── Sign-in: a card on the main page (on a phone the sidebar starts hidden) ──
 if not st.session_state.logged_in:
-    with st.container(key="labelwise_login"):
+    with st.container(key="quillbench_login"):
         login_head(settings.title, settings.subtitle)
         if not users:
             st.info("Welcome. This first account becomes the admin.")
@@ -168,7 +168,7 @@ if not st.session_state.logged_in:
                 else:
                     accounts.record_login(name_in, False)
                     st.error("Wrong user ID or password.")
-        st.markdown(f'<div class="labelwise-login-foot">{SHORT_NAME} {__version__} · © {AUTHOR}</div>',
+        st.markdown(f'<div class="quillbench-login-foot">{SHORT_NAME} {__version__} · © {AUTHOR}</div>',
                     unsafe_allow_html=True)
     st.stop()
 
@@ -260,7 +260,7 @@ with tabs["Annotate"]:
             st.session_state.active_batch = (unfinished or my_batches)[0]
             st.session_state.query_idx = 0
         current = my_batches.index(st.session_state.active_batch)
-        bar = st.container(key="labelwise_workbar").columns([4, 3, 1.4, 1.2], vertical_alignment="bottom")
+        bar = st.container(key="quillbench_workbar").columns([4, 3, 1.4, 1.2], vertical_alignment="bottom")
         with bar[0]:
             picked = st.selectbox("Batch", options, index=current,
                                   help="● complete · ◐ in progress · ○ not started")

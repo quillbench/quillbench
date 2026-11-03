@@ -4,8 +4,8 @@ The workspace registry: which paper workspaces this studio serves.
 ``registry.yaml`` in the studio home lists manifest paths only::
 
     workspaces:
-      - /path/to/paper_one/labelwise_workspace.yaml
-      - /path/to/paper_two/labelwise_workspace.yaml
+      - /path/to/paper_one/quillbench_workspace.yaml
+      - /path/to/paper_two/quillbench_workspace.yaml
 
 The studio reads each manifest when it loads and writes answers straight into
 that paper's folders, so the software and the papers stay separate yet always

@@ -19,9 +19,9 @@ cache. Shard files are derived data — regenerable, and safe to gitignore.
 
 Usage
 -----
-    python -m labelwise.shard_gold_cache WORKSPACE              # all sharded projects
-    python -m labelwise.shard_gold_cache WORKSPACE --project demo
-    python -m labelwise.shard_gold_cache WORKSPACE --source /path/to/full_cache.json
+    python -m quillbench.shard_gold_cache WORKSPACE              # all sharded projects
+    python -m quillbench.shard_gold_cache WORKSPACE --project demo
+    python -m quillbench.shard_gold_cache WORKSPACE --source /path/to/full_cache.json
 
 WORKSPACE is a registered workspace id or a manifest path. For a project with
 ``gold_cache.shard_dir``, the full source cache is taken from

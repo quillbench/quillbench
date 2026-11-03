@@ -1,5 +1,5 @@
 # Query-review example with a tiny invented bookshop graph (no real data).
-#   labelwise workspace add examples/bookshop
+#   quillbench workspace add examples/bookshop
 workspace:
   id: bookshop
   name: Bookshop (query-review example)

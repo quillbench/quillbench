@@ -1,4 +1,4 @@
-# Used when the app is started from this folder (labelwise serve sets the same values).
+# Used when the app is started from this folder (quillbench serve sets the same values).
 [theme]
 base = "light"
 primaryColor = "#2B3A67"

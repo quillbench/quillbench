@@ -2,7 +2,7 @@
 Workspace configuration: one paper's annotation projects, read from its manifest.
 
 A *workspace* is a folder that belongs to a paper. Its manifest,
-``labelwise_workspace.yaml``, declares the paper's annotation projects; every path in it
+``quillbench_workspace.yaml``, declares the paper's annotation projects; every path in it
 is resolved relative to the manifest's folder (absolute paths and ``~`` also work,
 so a workspace can point at data that already lives elsewhere). The studio never
 moves or copies workspace data -- it reads and writes it in place.
@@ -30,7 +30,22 @@ import yaml
 
 from .tasks import BUILTIN, TASKS, TaskSpec, customise
 
-MANIFEST_NAME = "labelwise_workspace.yaml"
+MANIFEST_NAME = "quillbench_workspace.yaml"
+OLD_MANIFEST_NAMES = ("labelwise_workspace.yaml",)  # made before the rename
+
+
+def manifest_in(folder: Path) -> Path:
+    new = folder / MANIFEST_NAME
+    if new.exists():
+        return new
+    return next((folder / n for n in OLD_MANIFEST_NAMES if (folder / n).exists()), new)
+
+
+def _default_assignments(root: Path) -> str:
+    """Workspaces made before the rename keep their assignments file."""
+    old = "labelwise_assignments.json"
+    return old if (root / old).exists() and not (root / "quillbench_assignments.json").exists() \
+        else "quillbench_assignments.json"
 
 # Columns every query-review benchmark CSV must provide. Everything else (category,
 # difficulty, split, local_id, ...) is optional and rendered only when present.
@@ -267,7 +282,7 @@ class WorkspaceConfig:
 
     @property
     def exports_dir(self) -> Path:
-        return self.root / "labelwise_exports"
+        return self.root / "quillbench_exports"
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -562,7 +577,7 @@ def load_workspace(manifest: str | Path, *, display_row_cap: int = 300,
         manifest=path.resolve(),
         batches_dir=_resolve(ws_raw.get("batches_dir", "batches"), root),
         progress_dir=_resolve(ws_raw.get("progress_dir", "progress"), root),
-        assignments_file=_resolve(ws_raw.get("assignments_file", "labelwise_assignments.json"), root),
+        assignments_file=_resolve(ws_raw.get("assignments_file", _default_assignments(root)), root),
         owner=str(ws_raw.get("owner", "")),
         description=str(ws_raw.get("description", "")),
         archived=bool(ws_raw.get("archived", False)),
@@ -571,6 +586,3 @@ def load_workspace(manifest: str | Path, *, display_row_cap: int = 300,
         query_timeout_seconds=query_timeout_seconds,
     )
 
-
-def manifest_in(folder: Path) -> Path:
-    return folder / MANIFEST_NAME

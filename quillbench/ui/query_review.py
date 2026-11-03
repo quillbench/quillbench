@@ -131,7 +131,7 @@ def _item_panel(
     spec = project.task_spec
     seconds_open = item_timer(active_batch, qid)
 
-    with st.container(key="labelwise_item"):
+    with st.container(key="quillbench_item"):
         item_nav(df, idx, total, labeled, skip_labeled, active_batch, project)
 
         badges = [f'<span class="meta-badge primary">Item {html.escape(str(local_id))}</span>']
@@ -235,7 +235,7 @@ def _item_panel(
 
     # One view, many tasks: the buttons come from the task definition, so the tasks stay
     # in step with each other. The bar stays on screen while the item scrolls.
-    with st.container(key="labelwise_answerbar"):
+    with st.container(key="quillbench_answerbar"):
         answer_head("Your verdict", spec, current_verdict)
         verdict = answer_buttons(spec, current_verdict, active_batch, qid)
     if verdict is None:
@@ -475,7 +475,7 @@ def _adjudication_view(cfg, project, annotator, active_batch, df, batch_df,
     st.session_state.setdefault("ui_result_h", 400)
     st.session_state.setdefault("ui_note_h", 90)
 
-    with st.container(key="labelwise_item"):
+    with st.container(key="quillbench_item"):
         item_nav(df, idx, total, labeled, skip_labeled, active_batch, project)
 
         row = df.iloc[idx]
@@ -564,7 +564,7 @@ def _adjudication_view(cfg, project, annotator, active_batch, df, batch_df,
             key=f"adjnote_{active_batch}_{qid}",
         )
 
-    with st.container(key="labelwise_answerbar"):
+    with st.container(key="quillbench_answerbar"):
         answer_head("Your label", spec, current)
         verdict = answer_buttons(spec, current, active_batch, qid)
     if verdict is None:

@@ -24,7 +24,7 @@ def run(dest: Path | None = None, keep: int | None = None) -> Path:
     keep = settings.backup_keep if keep is None else keep
     dest.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    target = dest / f"labelwise_backup_{stamp}.tar.gz"
+    target = dest / f"quillbench_backup_{stamp}.tar.gz"
     workspaces, _ = registry.load_all(settings)
     tmp = target.with_suffix(".tmp")
     with tarfile.open(tmp, "w:gz") as tar:
@@ -41,7 +41,7 @@ def run(dest: Path | None = None, keep: int | None = None) -> Path:
     tmp.rename(target)
     digest = hashlib.sha256(target.read_bytes()).hexdigest()
     target.with_name(target.name + ".sha256").write_text(f"{digest}  {target.name}\n")
-    old = sorted(dest.glob("labelwise_backup_*.tar.gz"))
+    old = sorted(dest.glob("quillbench_backup_*.tar.gz")) + sorted(dest.glob("labelwise_backup_*.tar.gz"))
     for stale in old[:-keep] if keep > 0 else []:
         stale.unlink(missing_ok=True)
         stale.with_name(stale.name + ".sha256").unlink(missing_ok=True)

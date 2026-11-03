@@ -1,27 +1,27 @@
-<p align="center"><img src="docs/logo.svg" width="120" alt="Labelwise logo"></p>
+<p align="center"><img src="docs/logo.svg" width="120" alt="QuillBench logo"></p>
 
-# Labelwise
+# QuillBench
 
-A config-driven human-annotation platform for research datasets, by **A.C. Pogaku**.
+Build benchmark datasets with human annotators. A config-driven annotation platform for research, by **A.C. Pogaku**.
 
 The software lives in this folder. Each paper keeps its own annotation data in its own
-folder, a **workspace**, described by one `labelwise_workspace.yaml` file. The studio reads
+folder, a **workspace**, described by one `quillbench_workspace.yaml` file. The studio reads
 that file and writes answers straight into the paper's folders, so there is nothing to
 copy and the two are always in step.
 
 ```
-~/labelwise/          the software (this repo)
-~/.config/labelwise/  private studio state: registry, accounts (hashed), settings
-<paper>/labelwise_workspace.yaml           one paper's projects
+~/quillbench/          the software (this repo)
+~/.config/quillbench/  private studio state: registry, accounts (hashed), settings
+<paper>/quillbench_workspace.yaml           one paper's projects
 <paper>/batches/*.csv|*.jsonl        items to annotate, one file per batch
 <paper>/progress/<user>__<batch>.csv answers, written by the studio
-<paper>/labelwise_assignments.json         who works on which batch (no secrets)
-<paper>/labelwise_exports/<time>/          exports: answers.csv/.jsonl, agreement.csv, DATASHEET.md
+<paper>/quillbench_assignments.json         who works on which batch (no secrets)
+<paper>/quillbench_exports/<time>/          exports: answers.csv/.jsonl, agreement.csv, DATASHEET.md
 ```
 
 ## Getting started in the browser
 
-Run `labelwise serve` and open the page. The first person to sign up becomes the admin, so do
+Run `quillbench serve` and open the page. The first person to sign up becomes the admin, so do
 this yourself before sharing the address. Then, with no files to edit, the admin can use
 **Admin → Projects** to create a project, upload CSVs at any time, set label buttons or a slider, split
 the items into batches and assign them. Add people under **Admin → People**, and follow the
@@ -46,19 +46,19 @@ from an earlier version of the task that still count as answers).
 ## Everyday commands
 
 ```bash
-labelwise init-workspace ~/my_paper/annotation      # start a new paper from a template
-labelwise workspace add ~/my_paper/annotation        # register it
-labelwise validate                                   # check every workspace
-labelwise user add alice                             # asks for a password
-labelwise assign alice my_paper rate_01 rate_02
-labelwise status my_paper                            # progress per person and batch
-labelwise quality my_paper                           # Krippendorff's alpha, Cohen's kappa, checks, time
-labelwise export my_paper                            # anonymised answers + datasheet
-labelwise backup                                     # also runs nightly
-labelwise serve                                      # http://127.0.0.1:8560/labelwise/
+quillbench init-workspace ~/my_paper/annotation      # start a new paper from a template
+quillbench workspace add ~/my_paper/annotation        # register it
+quillbench validate                                   # check every workspace
+quillbench user add alice                             # asks for a password
+quillbench assign alice my_paper rate_01 rate_02
+quillbench status my_paper                            # progress per person and batch
+quillbench quality my_paper                           # Krippendorff's alpha, Cohen's kappa, checks, time
+quillbench export my_paper                            # anonymised answers + datasheet
+quillbench backup                                     # also runs nightly
+quillbench serve                                      # http://127.0.0.1:8560/quillbench/
 ```
 
-(`python -m labelwise …` works the same without installing; `pip install -e .` adds the `labelwise` command.)
+(`python -m quillbench …` works the same without installing; `pip install -e .` adds the `quillbench` command.)
 
 In the app: **1–9** answer, **S** skip, **J/→** next, **K/←** previous, **Enter** saves a rating.
 
@@ -76,13 +76,13 @@ practice: true      # show each item's 'expected' and 'explanation' columns afte
 ## Running as a service
 
 ```bash
-cp deploy/labelwise.service deploy/labelwise-backup.service deploy/labelwise-backup.timer ~/.config/systemd/user/
+cp deploy/quillbench.service deploy/quillbench-backup.service deploy/quillbench-backup.timer ~/.config/systemd/user/
 systemctl --user daemon-reload
-systemctl --user enable --now labelwise labelwise-backup.timer
+systemctl --user enable --now quillbench quillbench-backup.timer
 sudo loginctl enable-linger $USER     # keep it running after logout
 ```
 
-nginx: add `deploy/nginx-labelwise.conf` to the server block.
+nginx: add `deploy/nginx-quillbench.conf` to the server block.
 
 ## Quality measures
 
@@ -91,7 +91,7 @@ nginx: add `deploy/nginx-labelwise.conf` to the server block.
   the worked example in Krippendorff (2011): 0.743 / 0.815 / 0.849.
 * **Cohen's kappa** per pair of annotators (labels), or mean absolute difference and
   Pearson r (ratings).
-* **Check items** passed per annotator, and **median seconds per item** (Labelwise records
+* **Check items** passed per annotator, and **median seconds per item** (QuillBench records
   `updated_at` and `seconds` for every answer).
 
 ## Security
