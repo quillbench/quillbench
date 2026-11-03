@@ -1,15 +1,12 @@
 # Annotation data never lives in this repo: it stays in each paper's workspace.
 progress/
 quillbench_exports/
-pas_exports/
 quillbench_assignments*.json
-pas_assignments*.json
 examples/*/progress/
 # Secrets
 .env
 *.secret
 quillbench.env
-pas.env
 # Python
 __pycache__/
 *.py[cod]
