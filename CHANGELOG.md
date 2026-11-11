@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.8.1 — 2026-11-11
+
+- **Connect to a database by host and port.** Under Admin → Connections, enter where the
+  database is (`db.example.org`, `db.example.org:5432`, or a `postgresql://` / `bolt://`
+  address) and click **Detect type**: QuillBench asks the port what is listening, without
+  logging in, and fills in PostgreSQL, MySQL/MariaDB or Neo4j. It says so when the port is
+  something else (a web page, SSH, Neo4j's web port instead of its Bolt port) or cannot be
+  reached.
+- A new install with no projects now shows New project, Connections and People together, so
+  the database can be added before the first benchmark project is created.
+
 ## 1.8.0 — 2026-11-11
 
 - **Build a benchmark with people.** A new project starts by asking what it is for: annotating

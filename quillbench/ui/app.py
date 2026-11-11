@@ -212,8 +212,15 @@ if load_problems and user_is_admin:
             st.error(p)
 
 if not my_workspaces and user_is_admin:
-    st.info("Create your first project.")
-    project_builder.render([], me)
+    st.info("Create your first project. A benchmark project needs its database first: add it "
+            "under Connections.")
+    t_new, t_conn, t_people = st.tabs(["New project", "Connections", "People"])
+    with t_new:
+        project_builder.render([], me)
+    with t_conn:
+        admin.connections_page([])
+    with t_people:
+        admin.people_page(me, settings)
     st.stop()
 
 if not my_workspaces:

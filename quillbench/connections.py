@@ -79,6 +79,135 @@ class QueryResult:
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# Finding out what is listening on a host and port
+# ──────────────────────────────────────────────────────────────────────────
+@dataclass(frozen=True)
+class Detected:
+    engine: str | None      # one of ENGINES, or None when it is not a database we support
+    message: str
+
+
+def split_address(text: str, port: int = 0) -> tuple[str, int]:
+    """``db.example.org:5433`` or ``[::1]:5432`` -> host and port; a bare host keeps ``port``."""
+    text = text.strip()
+    for scheme in ("bolt://", "neo4j://", "neo4j+s://", "bolt+s://", "postgresql://",
+                   "postgres://", "mysql://"):
+        if text.lower().startswith(scheme):
+            text = text[len(scheme):]
+    text = text.split("/", 1)[0].split("@")[-1]
+    if text.startswith("["):
+        host, _, rest = text[1:].partition("]")
+        return host, int(rest[1:]) if rest.startswith(":") and rest[1:].isdigit() else port
+    if text.count(":") == 1:
+        host, _, p = text.partition(":")
+        if p.isdigit():
+            return host, int(p)
+    return text, port
+
+
+def _recv(sock, n: int, wait: float) -> bytes:
+    import socket
+
+    sock.settimeout(wait)
+    try:
+        return sock.recv(n)
+    except (socket.timeout, OSError):
+        return b""
+
+
+def _open(host: str, port: int, timeout: float):
+    import socket
+
+    return socket.create_connection((host, port), timeout=timeout)
+
+
+def _banner(data: bytes) -> Detected | None:
+    """The server spoke first: MySQL and MariaDB do, and so do SSH, mail and FTP."""
+    if len(data) > 5 and data[4] == 10:              # MySQL protocol 10 greeting
+        version = data[5:].split(b"\0", 1)[0].decode("ascii", "replace")
+        name = "MariaDB" if "mariadb" in version.lower() else "MySQL"
+        return Detected("mysql", f"{name} {version.replace('-MariaDB', '').split('-')[0]}".strip())
+    if len(data) > 5 and data[4] == 0xFF:            # MySQL error packet, e.g. host not allowed
+        text = data[7:].decode("utf-8", "replace").lstrip("#").strip()
+        return Detected("mysql", f"MySQL or MariaDB, but it refused this server: {text[:150]}")
+    text = data[:80].decode("utf-8", "replace").strip()
+    if text.startswith("SSH-"):
+        return Detected(None, f"An SSH server ({text.splitlines()[0]}), not a database.")
+    if text[:3].isdigit():
+        return Detected(None, f"A mail or file server ('{text.splitlines()[0][:60]}'), not a database.")
+    return None
+
+
+def detect(host: str, port: int, timeout: float = 5.0) -> Detected:
+    """What database answers on ``host:port``, found without logging in.
+
+    Each database starts a connection differently: MySQL and MariaDB greet first;
+    PostgreSQL answers its 8-byte SSL request with a single 'S' or 'N'; Neo4j's Bolt
+    port answers its 4-byte magic number with the protocol version it picked.
+    """
+    import socket
+    import struct
+
+    host, port = split_address(host, port)
+    if not host or not 0 < port < 65536:
+        return Detected(None, "Enter a host and a port.")
+    try:
+        sock = _open(host, port, timeout)
+    except socket.gaierror:
+        return Detected(None, f"The name '{host}' could not be found. Check the host.")
+    except (socket.timeout, TimeoutError):
+        return Detected(None, f"No answer from {host}:{port} within {timeout:.0f} s. "
+                              "A firewall may be blocking this server.")
+    except OSError as exc:
+        return Detected(None, f"Could not reach {host}:{port}: {exc.strerror or exc}.")
+    with sock:
+        first = _recv(sock, 256, 1.5)
+        if first:
+            return _banner(first) or Detected(None, "Something answers on this port, but not a "
+                                                    "database QuillBench knows.")
+        try:
+            sock.sendall(struct.pack("!II", 8, 80877103))     # PostgreSQL SSLRequest
+        except OSError:
+            pass
+        reply = _recv(sock, 64, 2.0)
+    if reply[:1] in (b"S", b"N") and len(reply) == 1:
+        return Detected("postgresql", "PostgreSQL")
+    if reply.startswith(b"E") and b"SFATAL" in reply:      # PostgreSQL turned the request down
+        return Detected("postgresql", "PostgreSQL")
+    if reply.startswith(b"HTTP/"):
+        return _http(host, port, timeout)
+    try:
+        with _open(host, port, timeout) as sock:
+            sock.sendall(bytes.fromhex("6060B017") + bytes.fromhex("00080805 00020404 00000104 00000003"))
+            reply = _recv(sock, 4, 2.0)
+    except OSError:
+        reply = b""
+    if len(reply) == 4 and reply != b"\0\0\0\0":
+        return Detected("neo4j", f"Neo4j (Bolt {reply[3]}.{reply[2]})")
+    if len(reply) == 4:
+        return Detected("neo4j", "Neo4j, but it supports none of the Bolt versions the driver speaks")
+    if reply.startswith(b"HTTP/"):
+        return _http(host, port, timeout)
+    return _http(host, port, timeout) if port in (80, 443, 7474, 7473, 8080) else Detected(
+        None, "Something answers on this port, but it did not reply like PostgreSQL, MySQL, "
+              "MariaDB or Neo4j. SQL Server and Oracle are not supported.")
+
+
+def _http(host: str, port: int, timeout: float) -> Detected:
+    try:
+        with _open(host, port, timeout) as sock:
+            sock.sendall(f"GET / HTTP/1.0\r\nHost: {host}\r\n\r\n".encode())
+            body = _recv(sock, 4096, 2.0).decode("utf-8", "replace").lower()
+    except OSError:
+        body = ""
+    if "neo4j" in body or "bolt_routing" in body or "bolt_direct" in body:
+        return Detected(None, "This is Neo4j's web port. Use its Bolt port instead (usually 7687).")
+    if body.startswith("http/"):
+        return Detected(None, "A web server answers on this port, not a database.")
+    return Detected(None, "Something answers on this port, but not a database QuillBench knows.")
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # Storage
 # ──────────────────────────────────────────────────────────────────────────
 def connections_file() -> Path:

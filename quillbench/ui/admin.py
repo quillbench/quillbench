@@ -177,6 +177,14 @@ def _export(ws: WorkspaceConfig) -> None:
         st.success(f"Written to `{backup.run()}`")
 
 
+def connections_page(workspaces: list[WorkspaceConfig]) -> None:
+    _connections(workspaces)
+
+
+def people_page(me: str, settings: StudioSettings) -> None:
+    _people(me, ldap_auth.enabled(settings.ldap))
+
+
 def _connections(workspaces: list[WorkspaceConfig]) -> None:
     st.caption("Databases that benchmark projects query. Login details stay in the studio's "
                "private folder on the server; people writing entries see only the name. Every "
@@ -194,21 +202,49 @@ def _connections(workspaces: list[WorkspaceConfig]) -> None:
     pick = st.selectbox("Add or change", ids, key="conn_pick")
     cur = conns.get(pick)
     engines = list(connections.ENGINES)
-    engine = st.selectbox("Engine", engines, format_func=connections.ENGINES.get,
-                          index=engines.index(cur.engine) if cur else 0, key=f"conn_engine_{pick}")
+    ekey, note_key = f"conn_engine_{pick}", f"conn_found_{pick}"
+    if ekey not in st.session_state:
+        st.session_state[ekey] = cur.engine if cur else None
+
+    st.markdown("**Where is the database?**")
+    c1, c2, c3 = st.columns([3, 1, 1.2], vertical_alignment="bottom")
+    host = c1.text_input("Host (name or IP of the database server)", key=f"conn_host_{pick}",
+                         value=cur.host if cur and cur.engine != "sqlite" else "",
+                         placeholder="db.example.org, or db.example.org:5432")
+    port = c2.number_input("Port", 0, 65535, key=f"conn_port_{pick}",
+                           value=int(cur.port) if cur and cur.port else 0,
+                           help="0 = take it from the host field, or the type's usual port.")
+    if c3.button("Detect type", key=f"conn_detect_{pick}", width="stretch", disabled=not host.strip(),
+                 help="Asks the port what is listening there. No login is needed for this."):
+        h, p = connections.split_address(host, int(port))
+        if not p:
+            st.session_state[note_key] = (None, "Enter the port the database listens on.")
+        else:
+            with st.spinner(f"Checking {h}:{p}…"):
+                found = connections.detect(h, p)
+            st.session_state[note_key] = (found.engine, found.message)
+            if found.engine:
+                st.session_state[ekey] = found.engine
+    found = st.session_state.get(note_key)
+    if found and found[0]:
+        st.success(f"Found {found[1]}.")
+    elif found:
+        st.warning(found[1])
+
+    engine = st.selectbox("Type", engines, format_func=connections.ENGINES.get, key=ekey,
+                          placeholder="Detect it above, or choose")
+    if engine is None:
+        st.caption("Click **Detect type**, or choose the type yourself. A SQLite file on this "
+                   "server needs no host: choose SQLite.")
+        return
     with st.form(f"conn_form_{pick}"):
         c1, c2 = st.columns(2)
         cid = c1.text_input("Id (short, no spaces)", value=cur.id if cur else "", disabled=bool(cur))
         name = c2.text_input("Name people see", value=cur.name if cur else "")
-        host = port = database = user = password = path = ""
+        database = user = password = path = ""
         if engine == "sqlite":
             path = st.text_input("Path of the database file on the server", value=cur.path if cur else "")
         else:
-            c3, c4 = st.columns([3, 1])
-            host = c3.text_input("Host" + (" (or bolt:// / neo4j:// address)" if engine == "neo4j" else ""),
-                                 value=cur.host if cur else "localhost")
-            port = c4.number_input("Port", 0, 65535, int(cur.port) if cur and cur.port
-                                   else connections.DEFAULT_PORTS[engine])
             c5, c6, c7 = st.columns(3)
             database = c5.text_input("Database" + (" (optional)" if engine == "neo4j" else ""),
                                      value=cur.database if cur else "")
@@ -219,8 +255,11 @@ def _connections(workspaces: list[WorkspaceConfig]) -> None:
         save = b1.form_submit_button("Save and test", type="primary", width="stretch")
         remove = b2.form_submit_button("Delete", width="stretch", disabled=not cur)
     if save:
+        h, p = ("", 0) if engine == "sqlite" else connections.split_address(host, int(port))
+        if engine != "sqlite" and not p:
+            p = connections.DEFAULT_PORTS[engine]
         conn = connections.Connection(id=(cur.id if cur else cid.strip()), name=name.strip(), engine=engine,
-                                      host=host.strip(), port=int(port or 0), database=database.strip(),
+                                      host=h, port=p, database=database.strip(),
                                       user=user.strip(), password=password, path=path.strip())
         try:
             connections.save(conn)
