@@ -28,7 +28,7 @@ from typing import Any
 
 import yaml
 
-from .tasks import BUILTIN, TASKS, TaskSpec, customise
+from .tasks import BUILTIN, NO_REFERENCE_VIEWS, TASKS, TaskSpec, customise
 
 MANIFEST_NAME = "quillbench_workspace.yaml"
 OLD_MANIFEST_NAMES = ("labelwise_workspace.yaml", "pas_workspace.yaml")  # made before the renames
@@ -467,7 +467,7 @@ def _parse_project(raw: Any, root: Path, index: int, ws_id: str) -> ProjectConfi
     gold = raw.get("gold_cache")
     gold_file = gold_dir = None
     shard_template = "{batch}_cache.json"
-    if spec.view == "generic" or (spec.results_withheld and gold is None):
+    if spec.view in NO_REFERENCE_VIEWS or (spec.results_withheld and gold is None):
         # Generic tasks have no executed results; results-withheld tasks may omit them.
         gold = gold or {}
     if not isinstance(gold, dict):
@@ -477,7 +477,7 @@ def _parse_project(raw: Any, root: Path, index: int, ws_id: str) -> ProjectConfi
         )
     gold_file, gold_dir = gold.get("file"), gold.get("shard_dir")
     shard_template = str(gold.get("shard_filename_template", shard_template))
-    if spec.view == "generic" or spec.results_withheld:
+    if spec.view in NO_REFERENCE_VIEWS or spec.results_withheld:
         if gold_file and gold_dir:
             raise ConfigError(f"{where}.gold_cache: set at most one of 'file:' or 'shard_dir:'.")
     elif bool(gold_file) == bool(gold_dir):
@@ -487,7 +487,7 @@ def _parse_project(raw: Any, root: Path, index: int, ws_id: str) -> ProjectConfi
         )
 
     bench = raw.get("benchmark_csv")
-    if spec.view != "generic" and not bench:
+    if spec.view not in NO_REFERENCE_VIEWS and not bench:
         raise ConfigError(f"{where}: required key 'benchmark_csv' is missing or empty.")
 
     checks = raw.get("checks") or {}
@@ -512,7 +512,7 @@ def _parse_project(raw: Any, root: Path, index: int, ws_id: str) -> ProjectConfi
         cypher_placeholder=str(raw.get("cypher_placeholder", "")),
         instructions=str(raw.get("instructions", "")),
         archived=bool(raw.get("archived", False)),
-        ask_paraphrase=bool(raw.get("ask_paraphrase", spec.view != "generic")),
+        ask_paraphrase=bool(raw.get("ask_paraphrase", spec.view not in NO_REFERENCE_VIEWS)),
         display=_parse_display(raw.get("display"), where),
         checks={str(k): v for k, v in checks.items()},
         description=str(raw.get("description", "")),

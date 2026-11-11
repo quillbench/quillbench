@@ -39,7 +39,7 @@ def validate_workspace(ws: WorkspaceConfig, users: dict | None = None) -> tuple[
 
     batch_files = sorted(f for d in ws.all_batches_dirs if d.exists()
                          for s in BATCH_SUFFIXES for f in d.glob(f"*{s}"))
-    if not batch_files:
+    if not batch_files and any(p.task_spec.view != "creator" for p in ws.projects):
         warnings.append(f"No batch files (.csv or .jsonl) in {[str(d) for d in ws.all_batches_dirs]}.")
 
     for proj in ws.projects:
@@ -48,7 +48,7 @@ def validate_workspace(ws: WorkspaceConfig, users: dict | None = None) -> tuple[
         if proj.benchmark_csv is not None:
             if not proj.benchmark_csv.exists():
                 errors.append(f"{where}: benchmark_csv does not exist: {proj.benchmark_csv}")
-            elif spec.view != "generic":
+            elif spec.view not in ("generic", "creator"):
                 try:
                     head = pd.read_csv(proj.benchmark_csv, nrows=5)
                     missing = [c for c in REQUIRED_BENCHMARK_COLUMNS if c not in head.columns]

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quillbench"
-version = "1.7.0"
+version = "1.8.0"
 description = "Build benchmark datasets with human annotators: a config-driven annotation platform for research."
 readme = "README.md"
 keywords = ["annotation", "labeling", "benchmark", "dataset", "human evaluation", "streamlit", "research"]
@@ -30,6 +30,8 @@ Changelog = "https://github.com/quillbench/quillbench/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 test = ["pytest>=7"]
 ldap = ["ldap3>=2.9,<3"]
+postgres = ["psycopg[binary]>=3.1,<4"]
+mysql = ["PyMySQL>=1.1,<2"]
 
 [project.scripts]
 quillbench = "quillbench.cli:main"

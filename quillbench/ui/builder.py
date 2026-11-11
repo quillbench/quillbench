@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from .. import accounts, builder
+from .. import accounts, benchmark, builder, connections
 from ..config import ConfigError, WorkspaceConfig
 from ..storage import batch_status, list_batches
 
@@ -44,10 +44,19 @@ def _split_controls(table: pd.DataFrame, key: str) -> dict:
     return {"batch_size": int(size), "shuffle": shuffle, "people": people, "per_batch": int(per)}
 
 
+KINDS = {"annotate": "Annotate items I already have (upload a CSV)",
+         "create": "Build a new benchmark: people write questions and queries"}
+
+
 def _create(me: str) -> None:
     # Bumping the version gives the next project empty fields.
     v = st.session_state.get("new_version", 0)
+    kind = st.radio("What is this project for?", list(KINDS), format_func=KINDS.get,
+                    key=f"new_kind_{v}")
     name = st.text_input("Project name", key=f"new_name_{v}")
+    if kind == "create":
+        _create_benchmark(me, name, v)
+        return
     task = st.selectbox("What annotators do", list(builder.TASKS), key=f"new_task_{v}",
                         format_func=builder.TASKS.get)
     labels, scale = None, None
@@ -65,6 +74,30 @@ def _create(me: str) -> None:
             ws = builder.create_project(name, task, instructions, None, [], me,
                                         labels=labels, scale=scale)
         except (ValueError, ConfigError, OSError) as exc:
+            st.error(str(exc))
+            return
+        st.cache_resource.clear()
+        st.session_state.new_version = v + 1
+        st.session_state.manage_project = ws.id
+        st.rerun()
+
+
+def _create_benchmark(me: str, name: str, v: int) -> None:
+    conns = connections.load_all()
+    if not conns:
+        st.info("First add the database people will query, under Admin → Connections.")
+    conn = st.selectbox("Database connection", list(conns), index=None, key=f"new_conn_{v}",
+                        format_func=lambda c: f"{conns[c].name} ({connections.ENGINES[conns[c].engine]})",
+                        placeholder="Choose a connection")
+    people = st.multiselect("People who write entries (you can change this later)", _people(),
+                            key=f"new_bm_people_{v}")
+    instructions = st.text_area("Instructions shown at the top of the page", key=f"new_bm_instr_{v}")
+    st.caption("The project starts with a text block, the schema, and the question, query and "
+               "result slots. Add or reorder slots after creating it.")
+    if st.button("Create project", type="primary", key=f"new_bm_create_{v}", disabled=not conn):
+        try:
+            ws = builder.create_benchmark_project(name, conn, me, instructions, people)
+        except (ValueError, OSError) as exc:
             st.error(str(exc))
             return
         st.cache_resource.clear()
@@ -139,6 +172,11 @@ def _assign(ws: WorkspaceConfig) -> None:
 
 
 def _manage(ws: WorkspaceConfig) -> None:
+    if benchmark.is_benchmark(ws):
+        from . import form_builder
+
+        form_builder.render(ws)
+        return
     if ws.projects[0].task == "choice":
         _add_labels(ws)
     _add_csv(ws)

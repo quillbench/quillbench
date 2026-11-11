@@ -34,11 +34,34 @@ Free for academic, non-commercial use only; see [LICENSE](https://github.com/qui
 
 ## Getting started in the browser
 
-Run `quillbench serve` and open the page. The first person to sign up becomes the admin, so do
-this yourself before sharing the address. Then, with no files to edit, the admin can use
-**Admin → Projects** to create a project, upload CSVs at any time, set label buttons or a slider, split
-the items into batches and assign them. Add people under **Admin → People**, and follow the
-work in the **Progress** tab.
+Make the first admin on the server, then run `quillbench serve` and open the page:
+
+```
+quillbench user add YOURNAME --admin
+```
+
+Admins are only ever made this way, by someone who can run `quillbench` on the server; the web
+pages never grant the role, and university (LDAP) accounts are never admins. With no files to
+edit, an admin can then use **Admin → Projects** to create a project, upload CSVs at any time, set
+label buttons or a slider, split the items into batches and assign them. Add people under
+**Admin → People**, and follow the work in the **Progress** tab.
+
+## Building a benchmark with people
+
+Choose *Build a new benchmark* when creating a project. People then read the database schema and
+worked examples on the page, write a question and its query, run it, check the result and add
+the entry to `benchmark.csv` in the project folder.
+
+1. Under **Admin → Connections**, add the database (PostgreSQL, MySQL/MariaDB, SQLite or Neo4j).
+   Login details stay in the studio's private folder; people see only its name. Use a database
+   user that can only read. PostgreSQL and MySQL need `pip install 'quillbench[postgres]'` or
+   `pip install 'quillbench[mysql]'`.
+2. Create the project and design its form under **Admin → Projects**: add, label, reorder and
+   remove slots (text, schema, examples, question, query, result, label buttons, dropdown, tick
+   boxes, slider, short answer, paragraph), choose who writes entries and set the similarity limit.
+3. *Add* unlocks only when the query ran without error, returned enough rows, has not changed
+   since it ran, and the result box is ticked. A question 80% or more similar to an accepted
+   one is not added; it goes to `rejected.csv` with the id and score of the entry it matched.
 
 ## Task types
 

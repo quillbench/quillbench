@@ -208,14 +208,6 @@ def test_unquoted_no_label_explained(workspace):
         load_workspace(workspace)
 
 
-def test_first_admin_only_once(studio):
-    accounts.create_first_admin("first", "password1")
-    assert accounts.is_admin("first", accounts.load_users())
-    with pytest.raises(ValueError):
-        accounts.create_first_admin("second", "password1")
-    assert "second" not in accounts.load_users()
-
-
 def _table(n=10):
     return pd.DataFrame({"text": [f"item {i}" for i in range(n)]})
 

@@ -172,16 +172,12 @@ def test_practice_feedback(ready):
     assert "Different from the reference" in body and "36 degrees is hot." in body
 
 
-def test_first_visitor_becomes_admin(studio):
+def test_no_web_signup_for_first_admin(studio):
     at = AppTest.from_file(APP)
     at.run(timeout=30)
-    at.text_input[0].input("owner")
-    at.text_input[1].input("password1")
-    at.button[0].click()
-    at.run(timeout=30)
     assert not at.exception, at.exception
-    assert at.session_state.logged_in and accounts.is_admin("owner", accounts.load_users())
-    assert any(t.label == "Project name" for t in at.text_input)
+    assert any("user add YOUR_ID --admin" in c.value for c in at.code)
+    assert not at.text_input and not accounts.load_users()
 
 
 def test_create_button_works_without_a_csv(studio):

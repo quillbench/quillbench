@@ -45,6 +45,17 @@ from . import ldap_auth, paths
 from .config import WorkspaceConfig
 
 ROLES = ("annotator", "admin")
+
+# Admins are made only on the server, by someone who can run the ``quillbench``
+# command as the account that owns the studio (``quillbench user add NAME --admin``
+# or ``quillbench user role NAME admin``). The web pages never grant or remove the
+# role, and an account that signs in with a university (LDAP) login is never an
+# admin, whatever accounts.json says.
+NO_LDAP_ADMIN = "University (LDAP) accounts cannot be admins."
+
+
+def is_ldap_account(record: dict) -> bool:
+    return record.get("source") == "ldap" and not record.get("password_hash")
 _ITERATIONS = 310_000
 
 
@@ -130,27 +141,13 @@ def add_ldap_user(name: str, role: str = "annotator", display_name: str = "",
         raise ValueError("A university user id may use only letters, digits, '.', '_' and '-'.")
     if role not in ROLES:
         raise ValueError(f"role must be one of {ROLES}")
+    if role == "admin":
+        raise ValueError(NO_LDAP_ADMIN)
     users = load_users(path)
     if name in users:
         raise ValueError(f"User '{name}' already exists.")
     users[name] = {"role": role, "display_name": display_name or name, "active": True, "source": "ldap"}
     save_users(users, path)
-
-
-def create_first_admin(name: str, password: str, display_name: str = "") -> None:
-    """Make the first account an admin. Only ever works while no account exists."""
-    claim = paths.studio_home() / "first_admin.claim"
-    try:
-        fd = os.open(claim, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-    except FileExistsError:
-        raise ValueError("Setup is already being completed.") from None
-    os.close(fd)
-    try:
-        if load_users():
-            raise ValueError("An admin already exists.")
-        add_user(name, password, "admin", display_name)
-    finally:
-        claim.unlink(missing_ok=True)
 
 
 def set_password(name: str, password: str, path: Path | None = None) -> None:
@@ -170,6 +167,8 @@ def update_user(name: str, path: Path | None = None, **fields) -> None:
         raise ValueError(f"No user '{name}'.")
     if "role" in fields and fields["role"] not in ROLES:
         raise ValueError(f"role must be one of {ROLES}")
+    if fields.get("role") == "admin" and is_ldap_account(users[name]):
+        raise ValueError(NO_LDAP_ADMIN)
     was_active = users[name].get("active", True)
     users[name].update(fields)
     if was_active and not users[name].get("active", True):
@@ -263,7 +262,8 @@ def session_epoch(name: str, users: dict) -> int:
 
 
 def is_admin(name: str, users: dict) -> bool:
-    return users.get(name, {}).get("role", "") == "admin"
+    record = users.get(name, {})
+    return record.get("role", "") == "admin" and not is_ldap_account(record)
 
 
 # ──────────────────────────────────────────────────────────────────────────

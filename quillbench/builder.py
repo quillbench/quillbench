@@ -188,3 +188,36 @@ def add_labels(ws: WorkspaceConfig, new: list[str]) -> None:
         raise ValueError("Only label-button projects have labels.")
     current = yaml.safe_load(ws.manifest.read_text(encoding="utf-8"))["projects"][0]["labels"]
     _update_project(ws, labels=list(dict.fromkeys(current + new)))
+
+
+def create_benchmark_project(name: str, connection_id: str, owner: str,
+                             instructions: str = "", participants: list[str] | None = None):
+    """A project where people write new benchmark items; see benchmark.py."""
+    from . import benchmark, connections
+
+    name = name.strip()
+    if not name:
+        raise ValueError("Give the project a name.")
+    conn = connections.get(connection_id)
+    if conn is None:
+        raise ValueError("Choose a database connection (add one under Admin → Connections).")
+    ws_id = _new_id(name)
+    project = {"id": ws_id, "name": name, "task": "create", "default": True,
+               "instructions": instructions.strip()}
+    manifest = {"workspace": {"id": ws_id, "name": name, "owner": owner,
+                              "batches_dir": "batches", "progress_dir": "progress"},
+                "projects": [project]}
+    root = projects_root() / ws_id
+    (root / "batches").mkdir(parents=True)
+    try:
+        (root / MANIFEST_NAME).write_text(yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True),
+                                          encoding="utf-8")
+        ws = load_workspace(root)
+        form = benchmark.Form(connection=connection_id, participants=list(participants or []),
+                              slots=benchmark.default_slots(conn.language))
+        benchmark.save_form(ws, form)
+        registry.add(root)
+    except (ConfigError, OSError, ValueError):
+        shutil.rmtree(root, ignore_errors=True)
+        raise
+    return load_workspace(root)

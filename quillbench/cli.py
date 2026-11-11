@@ -150,7 +150,10 @@ def cmd_user(a):
             print(f"{name:24s} {r.get('role', ''):10s} {'active' if r.get('active', True) else 'disabled':9s}"
                   f" {r.get('display_name', '')}")
     elif a.action == "add" and a.ldap:
-        accounts.add_ldap_user(a.name, "admin" if a.admin else "annotator", a.display or "")
+        if a.admin:
+            sys.exit(accounts.NO_LDAP_ADMIN)
+        accounts.add_ldap_user(a.name, "annotator", a.display or "")
+        print(f"Added {a.name} (university login).")
     elif a.action == "add":
         accounts.add_user(a.name, _password(), "admin" if a.admin else "annotator", a.display or "")
         print(f"Added {a.name}.")
@@ -158,7 +161,10 @@ def cmd_user(a):
         accounts.set_password(a.name, _password("New password: "))
         print("Password changed.")
     elif a.action == "role":
-        accounts.update_user(a.name, role=a.value)
+        try:
+            accounts.update_user(a.name, role=a.value)
+        except ValueError as exc:
+            sys.exit(str(exc))
         print("Role changed.")
     elif a.action in ("disable", "enable"):
         accounts.update_user(a.name, active=a.action == "enable")

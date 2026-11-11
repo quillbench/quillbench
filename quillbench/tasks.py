@@ -64,7 +64,7 @@ class RatingSpec:
 class TaskSpec:
     name: str
     kind: str                         # "labels", "rating" or "text"
-    view: str                         # "query_review", "pair", "adjudication" or "generic"
+    view: str                         # "query_review", "pair", "adjudication", "generic" or "creator"
     labels: tuple[LabelSpec, ...] = ()
     reason_required: tuple[str, ...] = ()
     note_label: str = "Note (optional)"
@@ -245,12 +245,20 @@ RATING = TaskSpec("rating", "rating", "generic", rating=RatingSpec(),
                   note_label="Note (optional)", agreement_level="interval")
 TEXT = TaskSpec("text", "text", "generic", note_label="Note (optional)")
 
+# Benchmark creation: people write new items (question, query, result) instead of
+# answering existing ones. The form lives in the project's benchmark_form.yaml;
+# see quillbench/benchmark.py.
+CREATE = TaskSpec("create", "text", "creator", note_label="")
+
 BUILTIN: dict[str, TaskSpec] = {
     t.name: t for t in (VERDICT, ADJUDICATION, GATE_REVIEW, GATE_CALIBRATION, ITEM_QUESTION,
-                        ITEM_QUERY, ITEM_DISPOSITION, PAIR_SEMANTICS, CHOICE, RATING, TEXT)
+                        ITEM_QUERY, ITEM_DISPOSITION, PAIR_SEMANTICS, CHOICE, RATING, TEXT,
+                        CREATE)
 }
 TASKS = tuple(BUILTIN)
-QUERY_TASKS = tuple(n for n, t in BUILTIN.items() if t.view != "generic")
+# Views whose items do not come with a reference query and executed results.
+NO_REFERENCE_VIEWS = ("generic", "creator")
+QUERY_TASKS = tuple(n for n, t in BUILTIN.items() if t.view not in NO_REFERENCE_VIEWS)
 
 
 def _parse_marks(r: dict, where: str) -> tuple:

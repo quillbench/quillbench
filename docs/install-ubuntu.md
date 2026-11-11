@@ -79,8 +79,8 @@ Every setting is optional. The ones you are most likely to change:
 | `session_max_age_days` | `30` | How long a sign-in lasts |
 | `ldap` | none | University sign-in, see section 3 |
 
-Create your admin account **before** anyone else can reach the page. Otherwise the first person
-to open it becomes the admin.
+Create your admin account on the server. Admins can only be made this way: the web pages never
+grant the role, and university (LDAP) accounts can never be admins.
 
 ```bash
 ~/quillbench-env/bin/quillbench user add YOURNAME --admin

@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.8.0 — 2026-11-11
+
+- **Build a benchmark with people.** A new project starts by asking what it is for: annotating
+  items you already have, or building a new benchmark. In a benchmark project, people read the
+  database schema and worked examples, write a question and its query, run it, check the
+  result and add the entry. *Add* unlocks only when the query ran without error, returned at
+  least the set number of rows, has not changed since it ran, and the result box is ticked.
+- **A form you design.** Admins add, label, reorder and remove slots: text blocks, the live
+  database schema, worked examples, question, query editor, result, label buttons, dropdown,
+  tick boxes, slider, short answer and paragraph. Extra slots become columns in the CSV.
+- **Duplicate questions are kept out.** A question 80% or more similar (the limit is
+  adjustable) to any accepted entry, from anyone, is not added: the person is told, and the
+  entry goes to `rejected.csv` with its id, the id it matched and the score. Accepted entries
+  go to `benchmark.csv`. Every entry gets a random id that never repeats.
+- **Database connections** (Admin → Connections) for PostgreSQL, MySQL/MariaDB, SQLite and
+  Neo4j. Login details stay in the studio's private folder; people see only the name. Queries
+  run read-only, with a time limit. PostgreSQL and MySQL need
+  `pip install 'quillbench[postgres]'` or `'quillbench[mysql]'`.
+- **Admins are made on the server only**, with `quillbench user add ID --admin` or
+  `quillbench user role ID admin`. The web pages no longer grant or remove the admin role, and
+  the first visitor no longer becomes admin. University (LDAP) accounts are never admins.
+
 ## 1.7.0 — 2026-11-11
 
 - One version for every install. Servers that ran a private 1.5–1.6 copy and the PyPI

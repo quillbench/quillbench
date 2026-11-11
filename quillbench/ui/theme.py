@@ -178,6 +178,10 @@ h3 { font-size: 1.05rem !important; }
 .quillbench-login-head p { margin: .3rem 0 0 !important; color: var(--muted) !important; font-size: .88rem; }
 .st-key-quillbench_login [data-testid="stForm"] { animation: qb-fade-up .5s .4s both; }
 .st-key-quillbench_login input { transition: box-shadow .2s, border-color .2s; }
+/* benchmark creation: the query editor reads as code */
+[class*="st-key-qb_query_editor"] textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-size: .9rem !important; line-height: 1.45 !important; }
 .st-key-quillbench_login [data-baseweb="input"]:focus-within { box-shadow: 0 0 0 3px var(--accent-bg); border-radius: 8px; }
 .st-key-quillbench_login [data-testid="stFormSubmitButton"] button {
     min-height: 2.8rem; font-weight: 600; transition: transform .15s, box-shadow .2s;

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from .. import accounts, backup, export
+from .. import accounts, backup, benchmark, connections, export
 from ..config import WorkspaceConfig
 from .. import ldap_auth
 from ..settings import StudioSettings, save_archived_projects, save_setting
@@ -15,10 +15,12 @@ from . import builder as project_builder
 
 def render(ws: WorkspaceConfig, workspaces: list[WorkspaceConfig], me: str,
            settings: StudioSettings) -> None:
-    t_proj, t_assign, t_people, t_ws, t_export = st.tabs(
-        ["Projects", "Assignments", "People", "Workspaces & archive", "Export & backup"])
+    t_proj, t_assign, t_people, t_conn, t_ws, t_export = st.tabs(
+        ["Projects", "Assignments", "People", "Connections", "Workspaces & archive", "Export & backup"])
     with t_proj:
         project_builder.render(workspaces, me)
+    with t_conn:
+        _connections(workspaces)
     with t_assign:
         _assignments(ws)
     with t_people:
@@ -74,7 +76,8 @@ def _assignments(ws: WorkspaceConfig) -> None:
 def _people(me: str, ldap_on: bool = False) -> None:
     users = accounts.load_users()
     st.caption("Accounts are shared by all workspaces and stored with hashed passwords in the "
-               "studio's private folder.")
+               "studio's private folder. Admins are added on the server only: "
+               "`quillbench user add ID --admin`. University (LDAP) accounts cannot be admins.")
     rows = [{"User ID": n, "Name": r.get("display_name", n), "Role": r.get("role"),
              "Sign-in": "University" if r.get("source") == "ldap" and not r.get("password_hash") else "Password",
              "Active": r.get("active", True)} for n, r in sorted(users.items())]
@@ -90,13 +93,13 @@ def _people(me: str, ldap_on: bool = False) -> None:
                                           help="Their university password is checked by LDAP; leave "
                                                "the password below empty.")
             pw = st.text_input("Password (8+ characters)", type="password")
-            role = st.selectbox("Role", accounts.ROLES)
+            st.caption("Added as an annotator.")
             if st.form_submit_button("Add", width="stretch"):
                 try:
                     if uni:
-                        accounts.add_ldap_user(uid, role, name)
+                        accounts.add_ldap_user(uid, "annotator", name)
                     else:
-                        accounts.add_user(uid, pw, role, name)
+                        accounts.add_user(uid, pw, "annotator", name)
                     st.success(f"Added {uid}.")
                     st.rerun()
                 except ValueError as exc:
@@ -108,15 +111,14 @@ def _people(me: str, ldap_on: bool = False) -> None:
             rec = users[who]
             with st.form(f"edit_{who}"):
                 pw = st.text_input("New password (leave blank to keep)", type="password")
-                role = st.selectbox("Role", accounts.ROLES,
-                                    index=accounts.ROLES.index(rec.get("role", "annotator")))
+                st.caption(f"Role: {rec.get('role', 'annotator')} (changed on the server only)")
                 active = st.checkbox("Active (can sign in)", value=rec.get("active", True),
                                      disabled=who == me)
                 if st.form_submit_button("Save", width="stretch"):
                     try:
                         if pw:
                             accounts.set_password(who, pw)
-                        accounts.update_user(who, role=role, active=active or who == me)
+                        accounts.update_user(who, active=active or who == me)
                         st.success("Saved.")
                         st.rerun()
                     except ValueError as exc:
@@ -173,3 +175,67 @@ def _export(ws: WorkspaceConfig) -> None:
     st.markdown("**Backup** (runs nightly; this makes one now)")
     if st.button("Back up now"):
         st.success(f"Written to `{backup.run()}`")
+
+
+def _connections(workspaces: list[WorkspaceConfig]) -> None:
+    st.caption("Databases that benchmark projects query. Login details stay in the studio's "
+               "private folder on the server; people writing entries see only the name. Every "
+               "query runs read-only, but a database user that can only read is still the safest.")
+    conns = connections.load_all()
+    used: dict[str, list[str]] = {}
+    for w in workspaces:
+        if benchmark.is_benchmark(w):
+            used.setdefault(benchmark.load_form(w).connection, []).append(w.name)
+    if conns:
+        st.dataframe(pd.DataFrame([{"Id": c.id, "Name": c.name, "Engine": connections.ENGINES[c.engine],
+                                    "Where": c.where, "Used by": ", ".join(used.get(c.id, [])) or "—"}
+                                   for c in conns.values()]), width="stretch", hide_index=True)
+    ids = ["(new connection)"] + list(conns)
+    pick = st.selectbox("Add or change", ids, key="conn_pick")
+    cur = conns.get(pick)
+    engines = list(connections.ENGINES)
+    engine = st.selectbox("Engine", engines, format_func=connections.ENGINES.get,
+                          index=engines.index(cur.engine) if cur else 0, key=f"conn_engine_{pick}")
+    with st.form(f"conn_form_{pick}"):
+        c1, c2 = st.columns(2)
+        cid = c1.text_input("Id (short, no spaces)", value=cur.id if cur else "", disabled=bool(cur))
+        name = c2.text_input("Name people see", value=cur.name if cur else "")
+        host = port = database = user = password = path = ""
+        if engine == "sqlite":
+            path = st.text_input("Path of the database file on the server", value=cur.path if cur else "")
+        else:
+            c3, c4 = st.columns([3, 1])
+            host = c3.text_input("Host" + (" (or bolt:// / neo4j:// address)" if engine == "neo4j" else ""),
+                                 value=cur.host if cur else "localhost")
+            port = c4.number_input("Port", 0, 65535, int(cur.port) if cur and cur.port
+                                   else connections.DEFAULT_PORTS[engine])
+            c5, c6, c7 = st.columns(3)
+            database = c5.text_input("Database" + (" (optional)" if engine == "neo4j" else ""),
+                                     value=cur.database if cur else "")
+            user = c6.text_input("User", value=cur.user if cur else "")
+            password = c7.text_input("Password" + (" (blank keeps the saved one)" if cur else ""),
+                                     type="password")
+        b1, b2 = st.columns(2)
+        save = b1.form_submit_button("Save and test", type="primary", width="stretch")
+        remove = b2.form_submit_button("Delete", width="stretch", disabled=not cur)
+    if save:
+        conn = connections.Connection(id=(cur.id if cur else cid.strip()), name=name.strip(), engine=engine,
+                                      host=host.strip(), port=int(port or 0), database=database.strip(),
+                                      user=user.strip(), password=password, path=path.strip())
+        try:
+            connections.save(conn)
+        except ValueError as exc:
+            st.error(str(exc))
+            return
+        error = connections.test(connections.get(conn.id))
+        if error:
+            st.warning(f"Saved, but a test query failed: {error}")
+        else:
+            st.success("Saved. A test query worked.")
+    if remove and cur:
+        if used.get(cur.id):
+            st.error(f"Still used by: {', '.join(used[cur.id])}. Choose another connection there first.")
+        else:
+            connections.delete(cur.id)
+            st.success("Deleted.")
+            st.rerun()

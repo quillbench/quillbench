@@ -23,10 +23,10 @@ if str(_ROOT) not in sys.path:
 
 import streamlit as st  # noqa: E402
 
-from quillbench import AUTHOR, SHORT_NAME, __version__, accounts, paths, registry  # noqa: E402
+from quillbench import AUTHOR, SHORT_NAME, __version__, accounts, benchmark, paths, registry  # noqa: E402
 from quillbench.settings import load_settings  # noqa: E402
 from quillbench.storage import batch_status  # noqa: E402
-from quillbench.ui import admin, console, dashboard, generic, query_review, shortcuts  # noqa: E402
+from quillbench.ui import admin, console, creator, dashboard, generic, query_review, shortcuts  # noqa: E402
 from quillbench.ui.session import emit_auth_cookie, expire_auth_cookie, restore_session  # noqa: E402
 from quillbench.ui.theme import inject_css, login_brand, login_head, top_bar  # noqa: E402
 from quillbench.validate import validate_workspace  # noqa: E402
@@ -138,22 +138,12 @@ if not st.session_state.logged_in:
             login_brand(settings.subtitle)
         with form:
             if not users:
-                login_head("Set up QuillBench", "This first account becomes the admin.")
-                with st.form("first_admin", border=False):
-                    name_in = st.text_input("Choose a user ID").strip()
-                    pass_in = st.text_input("Choose a password (8+ characters)", type="password")
-                    if st.form_submit_button("Create admin account", width="stretch", type="primary"):
-                        try:
-                            accounts.create_first_admin(name_in, pass_in)
-                        except ValueError as exc:
-                            st.error(str(exc))
-                        else:
-                            st.session_state.logged_in = True
-                            st.session_state.annotator = name_in
-                            st.session_state.auth_issued = int(time.time())
-                            st.session_state.auth_epoch = 0
-                            st.rerun()
-            else:
+                login_head("Set up QuillBench", "No accounts yet.")
+                st.markdown("The first admin is made on the server, by someone who can run "
+                            "QuillBench there:")
+                st.code("quillbench user add YOUR_ID --admin", language="bash")
+                st.caption("Then reload this page and sign in.")
+            if users:
                 login_head("Welcome back", f"Sign in to {settings.title} to continue your work.")
                 with st.form("login", border=False):
                     name_in = st.text_input("User ID", placeholder="Your assigned identifier")
@@ -189,7 +179,8 @@ with st.sidebar:
         my_workspaces = [ws for ws in workspaces if not ws.archived] + \
                         [ws for ws in workspaces if ws.archived]
     else:
-        my_workspaces = [ws for ws in workspaces if not ws.archived and visible_batches(ws, me)]
+        my_workspaces = [ws for ws in workspaces if not ws.archived
+                         and (visible_batches(ws, me) or benchmark.is_participant(ws, me))]
     if my_workspaces:
         ids = [ws.id for ws in my_workspaces]
         if st.session_state.workspace not in ids:
@@ -241,7 +232,9 @@ if user_is_admin and (errors or warnings):
         for w in warnings:
             st.warning(w)
 
-tab_names = ["Annotate", "Progress"]
+is_bench = benchmark.is_benchmark(ws)
+work_tab = "Create" if is_bench else "Annotate"
+tab_names = [work_tab, "Progress"]
 # Admins only: the console can load any item's reference query, which would let a
 # blind reviewer see what the study hides from them.
 if ws.graph_targets and user_is_admin:
@@ -250,9 +243,11 @@ if user_is_admin:
     tab_names.append("Admin")
 tabs = dict(zip(tab_names, st.tabs(tab_names)))
 
-with tabs["Annotate"]:
-    my_batches = visible_batches(ws, me)
-    if not my_batches:
+with tabs[work_tab]:
+    my_batches = [] if is_bench else visible_batches(ws, me)
+    if is_bench:
+        creator.render(ws, me)
+    elif not my_batches:
         st.info("No batches are assigned to you in this workspace.")
     else:
         status = {b: batch_status(ws, me, b) for b in my_batches}
@@ -282,7 +277,10 @@ with tabs["Annotate"]:
             query_review.render(ws, me, accounts.legacy_view(ws, users), active, bar, next_batch)
 
 with tabs["Progress"]:
-    dashboard.render(ws, me, user_is_admin)
+    if is_bench:
+        creator.progress(ws, me, user_is_admin)
+    else:
+        dashboard.render(ws, me, user_is_admin)
 
 if "Query console" in tabs:
     with tabs["Query console"]:
