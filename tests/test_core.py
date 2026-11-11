@@ -268,3 +268,14 @@ def test_empty_project_takes_csv_later(studio):
     assert accounts.load_assignments(ws)["ben"]["batches"] == ["batch_002"]
     with pytest.raises(ValueError, match="missing"):
         builder.add_data(ws, pd.DataFrame({"other": ["x"]}), None)
+
+
+def test_manifest_in_finds_older_names(tmp_path):
+    from quillbench.config import MANIFEST_NAME, manifest_in
+
+    assert manifest_in(tmp_path) == tmp_path / MANIFEST_NAME
+    for old in ("pas_workspace.yaml", "labelwise_workspace.yaml"):
+        (tmp_path / old).write_text("x", encoding="utf-8")
+    assert manifest_in(tmp_path).name in ("pas_workspace.yaml", "labelwise_workspace.yaml")
+    (tmp_path / MANIFEST_NAME).write_text("x", encoding="utf-8")
+    assert manifest_in(tmp_path) == tmp_path / MANIFEST_NAME

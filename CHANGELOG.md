@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.0 — 2026-11-11
+
+- One version for every install. Servers that ran a private 1.5–1.6 copy and the PyPI
+  release are now the same code; this number is higher than both.
+- Workspaces whose manifest still has the older name `pas_workspace.yaml` are found
+  automatically, like `labelwise_workspace.yaml` already was.
+
 ## 1.4.2 — 2026-11-03
 
 - Step-by-step guide for installing on an Ubuntu server: `docs/install-ubuntu.md`.

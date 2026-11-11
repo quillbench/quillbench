@@ -31,7 +31,7 @@ import yaml
 from .tasks import BUILTIN, TASKS, TaskSpec, customise
 
 MANIFEST_NAME = "quillbench_workspace.yaml"
-OLD_MANIFEST_NAMES = ("labelwise_workspace.yaml",)  # made before the rename
+OLD_MANIFEST_NAMES = ("labelwise_workspace.yaml", "pas_workspace.yaml")  # made before the renames
 
 
 def manifest_in(folder: Path) -> Path:
