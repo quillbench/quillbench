@@ -1,0 +1,37 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 860 300' width='860' height='300'>
+<rect x='0' y='0' width='860' height='300' rx='10' fill='#ffffff' stroke='#ced4da' stroke-width='1'/>
+<rect x='0' y='0' width='860' height='34' rx='10' fill='#f1f3f5' stroke='#ced4da' stroke-width='1'/>
+<rect x='0' y='20' width='860' height='14' rx='6' fill='#f1f3f5' stroke='none' stroke-width='1'/>
+<circle cx='18' cy='17' r='6' fill='#fa5252'/>
+<circle cx='36' cy='17' r='6' fill='#fcc419'/>
+<circle cx='54' cy='17' r='6' fill='#51cf66'/>
+<text x='80' y='22' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='start'>QuillBench — signed in as an admin</text>
+<rect x='0' y='34' width='200' height='266' rx='6' fill='#f8f9fa' stroke='none' stroke-width='1'/>
+<text x='20' y='70' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>Workspace</text>
+<rect x='20' y='78' width='160' height='30' rx='6' fill='#fff' stroke='#ced4da' stroke-width='1'/>
+<text x='30' y='98' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#212529' text-anchor='start'>My project ▾</text>
+<circle cx='190' cy='93' r='12' fill='#e8590c'/>
+<text x='190' y='97.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>1</text>
+<text x='20' y='140' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>Signed in as alex</text>
+<rect x='20' y='255' width='160' height='30' rx='6' fill='#fff' stroke='#3b5bdb' stroke-width='1'/>
+<text x='100.0' y='274' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#3b5bdb' font-weight='600' text-anchor='middle'>Sign out</text>
+<text x='265.8' y='70' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='middle'>Annotate</text>
+<text x='345.40000000000003' y='70' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='middle'>Progress</text>
+<text x='414.20000000000005' y='70' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#e8590c' font-weight='600' text-anchor='middle'>Admin</text>
+<rect x='389.20000000000005' y='77' width='50.0' height='3' rx='1' fill='#e8590c' stroke='none' stroke-width='1'/>
+<line x1='230' y1='80' x2='840' y2='80' stroke='#dee2e6'/>
+<circle cx='475' cy='64' r='12' fill='#e8590c'/>
+<text x='475' y='68.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>2</text>
+<text x='265.8' y='115' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#e8590c' font-weight='600' text-anchor='middle'>Projects</text>
+<rect x='230' y='122' width='71.6' height='3' rx='1' fill='#e8590c' stroke='none' stroke-width='1'/>
+<text x='356.20000000000005' y='115' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='middle'>Assignments</text>
+<text x='439.40000000000003' y='115' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='middle'>People</text>
+<text x='522.6' y='115' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='middle'>Connections</text>
+<text x='656.2' y='115' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='middle'>Workspaces &amp; archive</text>
+<text x='804.2' y='115' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='middle'>Export &amp; backup</text>
+<line x1='230' y1='125' x2='840' y2='125' stroke='#dee2e6'/>
+<circle cx='300' cy='150' r='12' fill='#e8590c'/>
+<text x='300' y='154.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>3</text>
+<rect x='230' y='165' width='600' height='110' rx='6' fill='#fff' stroke='#adb5bd' stroke-width='1' stroke-dasharray='6 4'/>
+<text x='530' y='225' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#868e96' text-anchor='middle'>The content of the chosen tab appears here</text>
+</svg>

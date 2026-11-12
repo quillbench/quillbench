@@ -1,0 +1,28 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 860 330' width='860' height='330'>
+<rect x='0' y='0' width='860' height='330' rx='10' fill='#ffffff' stroke='#ced4da' stroke-width='1'/>
+<rect x='0' y='0' width='860' height='34' rx='10' fill='#f1f3f5' stroke='#ced4da' stroke-width='1'/>
+<rect x='0' y='20' width='860' height='14' rx='6' fill='#f1f3f5' stroke='none' stroke-width='1'/>
+<circle cx='18' cy='17' r='6' fill='#fa5252'/>
+<circle cx='36' cy='17' r='6' fill='#fcc419'/>
+<circle cx='54' cy='17' r='6' fill='#51cf66'/>
+<text x='80' y='22' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='start'>Terminal</text>
+<rect x='0' y='34' width='860' height='296' rx='0' fill='#1e1e1e' stroke='none' stroke-width='1'/>
+<text x='24' y='66' font-family='Menlo,Consolas,monospace' font-size='13' fill='#74c0fc' text-anchor='start'>$ </text>
+<text x='39.7' y='66' font-family='Menlo,Consolas,monospace' font-size='13' fill='#69db7c' text-anchor='start'>ssh alex@quillbench.example.org</text>
+<text x='24' y='94' font-family='Menlo,Consolas,monospace' font-size='13' fill='#74c0fc' text-anchor='start'>alex@server:~$ </text>
+<text x='141.75' y='94' font-family='Menlo,Consolas,monospace' font-size='13' fill='#69db7c' text-anchor='start'>source ~/quillbench-env/bin/activate</text>
+<text x='24' y='122' font-family='Menlo,Consolas,monospace' font-size='13' fill='#74c0fc' text-anchor='start'>(quillbench-env) $ </text>
+<text x='173.15' y='122' font-family='Menlo,Consolas,monospace' font-size='13' fill='#69db7c' text-anchor='start'>quillbench user add maria --admin --display &quot;Maria&quot;</text>
+<text x='24' y='150' font-family='Menlo,Consolas,monospace' font-size='13' fill='#74c0fc' text-anchor='start'></text>
+<text x='24.0' y='150' font-family='Menlo,Consolas,monospace' font-size='13' fill='#ced4da' text-anchor='start'>Password: ········</text>
+<text x='24' y='178' font-family='Menlo,Consolas,monospace' font-size='13' fill='#74c0fc' text-anchor='start'></text>
+<text x='24.0' y='178' font-family='Menlo,Consolas,monospace' font-size='13' fill='#ced4da' text-anchor='start'>Repeat: ········</text>
+<text x='24' y='206' font-family='Menlo,Consolas,monospace' font-size='13' fill='#74c0fc' text-anchor='start'></text>
+<text x='24.0' y='206' font-family='Menlo,Consolas,monospace' font-size='13' fill='#ced4da' text-anchor='start'>Added maria.</text>
+<text x='24' y='234' font-family='Menlo,Consolas,monospace' font-size='13' fill='#74c0fc' text-anchor='start'>(quillbench-env) $ </text>
+<text x='173.15' y='234' font-family='Menlo,Consolas,monospace' font-size='13' fill='#69db7c' text-anchor='start'>quillbench user list</text>
+<text x='24' y='262' font-family='Menlo,Consolas,monospace' font-size='13' fill='#74c0fc' text-anchor='start'></text>
+<text x='24.0' y='262' font-family='Menlo,Consolas,monospace' font-size='13' fill='#ced4da' text-anchor='start'>alex                     admin      active    Alex</text>
+<text x='24' y='290' font-family='Menlo,Consolas,monospace' font-size='13' fill='#74c0fc' text-anchor='start'></text>
+<text x='24.0' y='290' font-family='Menlo,Consolas,monospace' font-size='13' fill='#ced4da' text-anchor='start'>maria                    admin      active    Maria</text>
+</svg>

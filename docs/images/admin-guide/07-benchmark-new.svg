@@ -1,0 +1,38 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 860 360' width='860' height='360'>
+<rect x='0' y='0' width='860' height='360' rx='10' fill='#ffffff' stroke='#ced4da' stroke-width='1'/>
+<rect x='0' y='0' width='860' height='34' rx='10' fill='#f1f3f5' stroke='#ced4da' stroke-width='1'/>
+<rect x='0' y='20' width='860' height='14' rx='6' fill='#f1f3f5' stroke='none' stroke-width='1'/>
+<circle cx='18' cy='17' r='6' fill='#fa5252'/>
+<circle cx='36' cy='17' r='6' fill='#fcc419'/>
+<circle cx='54' cy='17' r='6' fill='#51cf66'/>
+<text x='80' y='22' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='start'>New project → Build a new benchmark</text>
+<circle cx='37' cy='66' r='7' fill='#fff' stroke='#adb5bd' stroke-width='1.5'/>
+<text x='52' y='70' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12.5' fill='#212529' text-anchor='start'>Annotate items I already have (upload a CSV)</text>
+<circle cx='37' cy='92' r='7' fill='#fff' stroke='#3b5bdb' stroke-width='1.5'/>
+<circle cx='37' cy='92' r='3.5' fill='#3b5bdb'/>
+<text x='52' y='96' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12.5' fill='#212529' text-anchor='start'>Build a new benchmark: people write questions and queries</text>
+<text x='30' y='120' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>Project name</text>
+<rect x='30' y='126' width='500' height='30' rx='6' fill='#f8f9fa' stroke='#ced4da' stroke-width='1'/>
+<text x='38' y='145.0' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#212529' text-anchor='start'>Hospital questions</text>
+<circle cx='550' cy='142' r='12' fill='#e8590c'/>
+<text x='550' y='146.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>1</text>
+<text x='30' y='180' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>Database connection</text>
+<rect x='30' y='186' width='500' height='30' rx='6' fill='#f8f9fa' stroke='#ced4da' stroke-width='1'/>
+<text x='38' y='205.0' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#212529' text-anchor='start'>Hospital database (PostgreSQL) ▾</text>
+<circle cx='550' cy='202' r='12' fill='#e8590c'/>
+<text x='550' y='206.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>2</text>
+<text x='30' y='240' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>People who write entries (you can change this later)</text>
+<rect x='30' y='246' width='500' height='30' rx='6' fill='#f8f9fa' stroke='#ced4da' stroke-width='1'/>
+<text x='38' y='265.0' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#212529' text-anchor='start'>maria ×   ravi ×</text>
+<circle cx='550' cy='262' r='12' fill='#e8590c'/>
+<text x='550' y='266.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>3</text>
+<text x='30' y='300' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>Instructions shown at the top of the page</text>
+<rect x='30' y='306' width='500' height='30' rx='6' fill='#f8f9fa' stroke='#ced4da' stroke-width='1'/>
+<text x='38' y='325.0' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#212529' text-anchor='start'>Write questions a doctor would ask.</text>
+<circle cx='550' cy='322' r='12' fill='#e8590c'/>
+<text x='550' y='326.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>4</text>
+<rect x='600' y='306' width='150' height='30' rx='6' fill='#3b5bdb' stroke='#3b5bdb' stroke-width='1'/>
+<text x='675.0' y='325' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#fff' font-weight='600' text-anchor='middle'>Create project</text>
+<circle cx='770' cy='321' r='12' fill='#e8590c'/>
+<text x='770' y='325.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>5</text>
+</svg>

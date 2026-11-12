@@ -1,0 +1,35 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 860 360' width='860' height='360'>
+<rect x='0' y='0' width='860' height='360' rx='10' fill='#ffffff' stroke='#ced4da' stroke-width='1'/>
+<rect x='0' y='0' width='860' height='34' rx='10' fill='#f1f3f5' stroke='#ced4da' stroke-width='1'/>
+<rect x='0' y='20' width='860' height='14' rx='6' fill='#f1f3f5' stroke='none' stroke-width='1'/>
+<circle cx='18' cy='17' r='6' fill='#fa5252'/>
+<circle cx='36' cy='17' r='6' fill='#fcc419'/>
+<circle cx='54' cy='17' r='6' fill='#51cf66'/>
+<text x='80' y='22' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='start'>New project → Annotate items I already have</text>
+<text x='30' y='66' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>What annotators do</text>
+<rect x='30' y='76' width='520' height='32' rx='6' fill='#e7f5ff' stroke='#ced4da' stroke-width='1'/>
+<text x='42' y='97' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#212529' font-weight='600' text-anchor='start'>Label buttons</text>
+<text x='210' y='97' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>pick one label, e.g. Positive / Negative</text>
+<rect x='30' y='116' width='520' height='32' rx='6' fill='#fff' stroke='#ced4da' stroke-width='1'/>
+<text x='42' y='137' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#212529' font-weight='600' text-anchor='start'>Slider rating</text>
+<text x='210' y='137' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>a number between a lowest and highest value</text>
+<rect x='30' y='156' width='520' height='32' rx='6' fill='#fff' stroke='#ced4da' stroke-width='1'/>
+<text x='42' y='177' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#212529' font-weight='600' text-anchor='start'>Short written answer</text>
+<text x='210' y='177' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>type a few words</text>
+<circle cx='570' cy='92' r='12' fill='#e8590c'/>
+<text x='570' y='96.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>1</text>
+<text x='30' y='215' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>Label buttons (one per line)</text>
+<rect x='30' y='221' width='520' height='36' rx='6' fill='#f8f9fa' stroke='#ced4da' stroke-width='1'/>
+<text x='38' y='243.0' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#212529' text-anchor='start'>Positive   ⏎   Negative   ⏎   Neutral</text>
+<circle cx='570' cy='239' r='12' fill='#e8590c'/>
+<text x='570' y='243.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>2</text>
+<text x='30' y='275' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>Instructions for annotators</text>
+<rect x='30' y='281' width='520' height='30' rx='6' fill='#f8f9fa' stroke='#ced4da' stroke-width='1'/>
+<text x='38' y='300.0' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#212529' text-anchor='start'>Read the tweet. Pick the overall feeling.</text>
+<circle cx='570' cy='297' r='12' fill='#e8590c'/>
+<text x='570' y='301.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>3</text>
+<rect x='30' y='320' width='140' height='30' rx='6' fill='#3b5bdb' stroke='#3b5bdb' stroke-width='1'/>
+<text x='100.0' y='339' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#fff' font-weight='600' text-anchor='middle'>Create project</text>
+<circle cx='190' cy='335' r='12' fill='#e8590c'/>
+<text x='190' y='339.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>4</text>
+</svg>
