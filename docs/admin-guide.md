@@ -374,11 +374,20 @@ The slot types you can add:
 | Worked examples | Example question + query pairs, each with a **Run this example** button | no |
 | Question | A box to write the question | **yes** (always) |
 | Query editor | A box for the query and a **Run query** button | **yes** (always) |
-| Query result and check box | The result table and a tick box ("The result answers the question") | **yes** (always) |
+| Query result and verdict buttons | The result table, the categories found, and buttons **Correct / Incorrect / Uncertain** | **yes** (always) |
 | Label buttons / Dropdown | Pick one option (e.g. difficulty: Easy / Medium / Hard) | yes |
 | Tick boxes | Pick any number of options | yes |
 | Slider | A number in a range | yes |
 | Short answer / Paragraph | Free text | yes |
+
+In the **result** slot you can rename the verdict buttons or add more (one per line, e.g.
+`Correct`, `Incorrect`, `Uncertain`, `Partly correct`), and choose:
+
+- **Can be added when marked** — which verdicts are allowed into the benchmark (normally all,
+  so you also collect the queries people were unsure about);
+- **Earns points when marked** — which verdicts give points (normally only **Correct**).
+
+The chosen verdict is saved for every entry, in the `verdict` column.
 
 Extra slots that save a column have a **Required** tick box. If ticked, an entry cannot be
 added until it is filled in.
@@ -396,8 +405,9 @@ They choose the project in the left menu and open the **Create** tab.
 |---|---|
 | **1** | Their count of **added** entries, and the message from their last attempt (green = added, red = not added and why). |
 | **2** | They write the query and click **Run query**. The result appears below. |
-| **3** | They look at the result and tick the check box if it really answers the question. |
+| **3** | They give their opinion of the result: **Correct**, **Incorrect** or **Uncertain** (or your own buttons). |
 | **4** | **Add to benchmark** becomes blue only when everything is ready (next picture). |
+| **5** | **Complexity and categories:** after the query runs, the system shows its complexity (Easy, Medium, Hard or Very hard), its points, and the categories it falls into (join, group by, average, …). Nobody chooses these by hand. |
 
 ![When can an entry be added](images/admin-guide/11-add-rules.svg)
 
@@ -406,6 +416,62 @@ They choose the project in the left menu and open the **Create** tab.
 - A rejected entry is **not counted** for the person, but it is kept in `rejected.csv` with its
   similarity score, its own id, and the id of the entry it matched. Nothing is thrown away.
 - If the person edits the query after running it, they must run it again.
+
+### 7.5 Categories and points
+
+The system reads every query and sorts it into **categories** by itself, for example
+*Simple lookup*, *Filter (WHERE)*, *Single join*, *Multi join*, *COUNT*, *SUM*, *AVG*, *MIN*,
+*MAX*, *GROUP BY*, *HAVING*, *Top-N*, *Subquery*, *WITH*, *Window function*, *Date and time*.
+Neo4j projects get graph categories instead of joins: *One relationship*, *Multi hop*,
+*Variable-length path*, *Shortest path*. One query can be in many categories.
+
+You only decide what they are worth. In the form designer, open **Categories and points**:
+
+![Categories and points](images/admin-guide/13-points.svg)
+
+| Number | What to do |
+|---|---|
+| **1** | **Points:** what one entry in this category earns. Harder categories should be worth more. The defaults are a sensible start. |
+| **2** | **Minimum per person:** the points each person must reach in this category, e.g. `8` for Multi join means "at least two multi-join entries worth 4". `0` means no minimum. Use this to make sure everyone tries the hard kinds, not only easy ones. |
+| **3** | **Minimum total points per person:** the overall goal, e.g. `30`. `0` means none. |
+
+Then click **Save form**.
+
+An entry earns the points of its **most valuable category only**. Example: a query with a
+WHERE (1), a join (2) and an AVG (2) is worth **2** points, not 5.
+
+Each query also gets a **complexity level**, set by the system from its hardest category,
+so it does not change when you change the points:
+
+| Level | Hardest category in the query, for example |
+|---|---|
+| Easy | simple lookup, filter, COUNT, sorting, DISTINCT |
+| Medium | single join, SUM/AVG/MIN/MAX, GROUP BY, top-N, CASE, dates |
+| Hard | HAVING, subquery, WITH, UNION, outer join |
+| Very hard | multi join, window functions, multi hop, variable-length or shortest paths |
+
+For the **Minimum per person** of a category, every entry that uses that category counts
+towards it, so one hard query can help with several minimums. Only entries marked with a verdict in
+**Earns points when marked** (normally *Correct*) earn points.
+
+Points are always worked out again from the saved queries with the current settings, so if
+you change the points halfway through the course, everyone's totals update fairly.
+
+### 7.6 The Profile tab
+
+Every person in a benchmark project has a **Profile** tab with their own performance.
+
+![The Profile tab](images/admin-guide/12-profile.svg)
+
+| Number | What it shows |
+|---|---|
+| **1** | Their points (and the goal), entries added, entries not added (too similar), and how many targets are still open. Below it, how many of their entries are Easy, Medium, Hard and Very hard. |
+| **2** | Per category: how many entries, how many points, the minimum you set, a progress bar, and whether it is met. |
+| **3** | What is still needed, so they know which kind of question to write next. |
+
+Below that they can open a list of all their entries with complexity, categories, verdict and
+points.
+As an admin you see a **Person** box at the top of the Profile tab, to open anyone's profile.
 
 ---
 
@@ -423,14 +489,18 @@ They choose the project in the left menu and open the **Create** tab.
 
 **Progress tab** (admins see more than other people):
 
-- totals: entries in the benchmark, entries not added, number of people;
-- a table of added / not added per person;
+- totals: entries in the benchmark, entries not added, number of people, and how many
+  people have met all their targets;
+- a table per person: added, not added, points, and which targets are still open;
+- **Entries per category:** a chart of how many entries the whole benchmark has in each
+  category, so you can see if some kinds of question are missing;
 - **Download benchmark.csv** (accepted entries) and **Download rejected.csv**;
 - the 50 most recent rejected entries next to the question they matched;
 - click **Refresh** to update the numbers.
 
-`benchmark.csv` has the columns `id, author, created_at, question, query, row_count`, plus one
-column per extra slot you added.
+`benchmark.csv` has the columns `id, author, created_at, question, query, row_count,
+result_columns, result_preview, categories, verdict`, plus one column per extra slot you added.
+`categories` lists the category ids separated by `;` (e.g. `filter;join;avg`).
 
 ---
 
@@ -564,6 +634,7 @@ QuillBench runs as a background service called `quillbench`.
 | **Save and test fails with a login error** | Wrong user, password or database name. Re-type them and click **Save and test** again. |
 | **"driver is not installed"** | See the last tip in 7.1. Remember: run the install **on the server**, not on your laptop. |
 | **People say "The form is not ready yet"** | Open the form designer, choose a database connection in Settings, and click **Save form**. Red messages list what is missing. |
-| **Add to benchmark stays grey** | Read the line under the button; it lists what is missing (run the query, tick the box, fill a required slot, …). |
+| **Add to benchmark stays grey** | Read the line under the button; it lists what is missing (run the query, choose a verdict, fill a required slot, …). If the chosen verdict is not in **Can be added when marked**, it says so. |
+| **A query got the wrong category** | Categories are found from the query text. Tell the QuillBench maintainer with the query, so the rule can be improved; points are recalculated for everyone once it is fixed. |
 | **Uploading a CSV fails** | Save the file as **CSV UTF-8**, make sure the first row has column names, and that ids are unique. |
 | **Command not found: quillbench** | You skipped step 4.3, or you are on your laptop instead of the server (4.2). |

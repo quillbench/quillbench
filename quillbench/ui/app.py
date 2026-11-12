@@ -115,6 +115,10 @@ else:
 
 me = st.session_state.annotator
 user_is_admin = st.session_state.logged_in and accounts.is_admin(me, users)
+if not user_is_admin:
+    # Tables get a hover toolbar with "Download as CSV"; only admins may download data.
+    st.markdown("<style>[data-testid='stElementToolbar']{display:none !important}</style>",
+                unsafe_allow_html=True)
 
 
 def visible_batches(ws, name: str) -> list[str]:
@@ -241,7 +245,7 @@ if user_is_admin and (errors or warnings):
 
 is_bench = benchmark.is_benchmark(ws)
 work_tab = "Create" if is_bench else "Annotate"
-tab_names = [work_tab, "Progress"]
+tab_names = [work_tab, "Progress"] + (["Profile"] if is_bench else [])
 # Admins only: the console can load any item's reference query, which would let a
 # blind reviewer see what the study hides from them.
 if ws.graph_targets and user_is_admin:
@@ -282,6 +286,10 @@ with tabs[work_tab]:
             generic.render(ws, me, active, bar, next_batch)
         else:
             query_review.render(ws, me, accounts.legacy_view(ws, users), active, bar, next_batch)
+
+if "Profile" in tabs:
+    with tabs["Profile"]:
+        creator.profile(ws, me, user_is_admin)
 
 with tabs["Progress"]:
     if is_bench:

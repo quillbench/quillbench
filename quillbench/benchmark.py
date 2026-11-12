@@ -14,13 +14,18 @@ next to the manifest in ``benchmark_form.yaml``::
       - {id: examples, type: examples, label: Examples, examples: [{question: ..., query: ...}]}
       - {id: question, type: question, label: Question, required: true}
       - {id: query, type: query, label: SQL query, required: true}
-      - {id: result, type: result, label: Result, confirm: "The result answers my question"}
+      - {id: result, type: result, label: Result, verdicts: [Correct, Incorrect, Uncertain]}
       - {id: difficulty, type: choice, label: Difficulty, options: [easy, medium, hard]}
 
 Every entry gets a random id, unique across the project. Entries whose question is
 ``threshold`` or more similar to an accepted entry, from anyone, go to
 ``rejected.csv`` with the id and score of the entry they matched; the rest go to
 ``benchmark.csv``. Both files sit in the project folder under ``benchmark/``.
+
+Each query is sorted into categories automatically (categories.py). The form can
+give each category a number of points (``points``), a minimum each person should
+reach in it (``targets``) and an overall minimum (``min_total``). Only entries whose
+verdict is in the result slot's ``scored`` list earn points.
 """
 
 from __future__ import annotations
@@ -39,6 +44,7 @@ from pathlib import Path
 
 import yaml
 
+from . import categories
 from .config import WorkspaceConfig
 
 FORM_NAME = "benchmark_form.yaml"
@@ -52,7 +58,7 @@ SLOT_TYPES = {
     "examples": ("Worked examples", False),
     "question": ("Question (the person writes it)", True),
     "query": ("Query editor with a Run button", True),
-    "result": ("Query result and check box", True),
+    "result": ("Query result and verdict buttons", True),
     "choice": ("Label buttons (pick one)", True),
     "dropdown": ("Dropdown (pick one)", True),
     "multi": ("Tick boxes (pick any)", True),
@@ -63,7 +69,8 @@ SLOT_TYPES = {
 # Exactly one of each of these in every form.
 CORE = ("question", "query", "result")
 FIXED_COLUMNS = ["id", "author", "created_at", "question", "query", "row_count",
-                 "result_columns", "result_preview"]
+                 "result_columns", "result_preview", "categories", "verdict"]
+DEFAULT_VERDICTS = ["Correct", "Incorrect", "Uncertain"]
 REJECT_COLUMNS = ["similarity", "matched_id"]
 PREVIEW_ROWS = 5
 
@@ -81,7 +88,10 @@ class Slot:
     minimum: float = 0.0                             # rating
     maximum: float = 5.0
     step: float = 1.0
-    confirm: str = "I checked the result, and it answers my question."   # result
+    confirm: str = "Is the result right for your question?"   # result: the question above the buttons
+    verdicts: list = field(default_factory=lambda: list(DEFAULT_VERDICTS))   # result
+    accept: list = field(default_factory=lambda: list(DEFAULT_VERDICTS))     # verdicts that may be added
+    scored: list = field(default_factory=lambda: ["Correct"])                # verdicts that earn points
 
     @property
     def is_input(self) -> bool:
@@ -107,7 +117,8 @@ class Slot:
         if self.type == "rating":
             out.update(minimum=self.minimum, maximum=self.maximum, step=self.step)
         if self.type == "result":
-            out["confirm"] = self.confirm
+            out.update(confirm=self.confirm, verdicts=list(self.verdicts),
+                       accept=list(self.accept), scored=list(self.scored))
         return out
 
 
@@ -118,6 +129,9 @@ class Form:
     threshold: float = 0.8
     min_rows: int = 1
     slots: list = field(default_factory=list)
+    points: dict = field(default_factory=dict)    # category id -> points (missing = catalogue default)
+    targets: dict = field(default_factory=dict)   # category id -> minimum points per person
+    min_total: int = 0                            # minimum total points per person
 
     def slot(self, kind: str) -> Slot | None:
         return next((s for s in self.slots if s.type == kind), None)
@@ -125,7 +139,22 @@ class Form:
     def to_dict(self) -> dict:
         return {"connection": self.connection, "participants": list(self.participants),
                 "threshold": self.threshold, "min_rows": self.min_rows,
+                "points": dict(self.points), "targets": dict(self.targets),
+                "min_total": self.min_total,
                 "slots": [s.to_dict() for s in self.slots]}
+
+    def score(self, cats: list[str]) -> tuple[int, str]:
+        """An entry is worth its single most valuable category: (points, that category)."""
+        if not cats:
+            return 0, ""
+        top = max(cats, key=self.points_for)    # ties: the first in catalogue order
+        return self.points_for(top), top
+
+    def points_for(self, cid: str) -> int:
+        if cid in self.points:
+            return int(self.points[cid])
+        c = categories.BY_ID.get(cid)
+        return c.points if c else 0
 
 
 def default_slots(language: str = "sql") -> list[Slot]:
@@ -162,6 +191,8 @@ def _slot_from(raw: dict) -> Slot:
     known["id"], known["type"] = str(raw.get("id") or kind), kind
     if kind in CORE:
         known["required"] = True
+    if str(known.get("confirm", "")).startswith("I checked the result"):
+        del known["confirm"]   # the text of the old tick box; the buttons ask a question instead
     return Slot(**known)
 
 
@@ -173,7 +204,10 @@ def load_form(ws: WorkspaceConfig) -> Form:
                 participants=[str(p) for p in raw.get("participants", [])],
                 threshold=float(raw.get("threshold", 0.8)),
                 min_rows=int(raw.get("min_rows", 1)),
-                slots=[_slot_from(s) for s in raw.get("slots", [])])
+                slots=[_slot_from(s) for s in raw.get("slots", [])],
+                points={str(k): int(v) for k, v in (raw.get("points") or {}).items()},
+                targets={str(k): int(v) for k, v in (raw.get("targets") or {}).items() if int(v) > 0},
+                min_total=int(raw.get("min_total", 0) or 0))
 
 
 def check_form(form: Form) -> list[str]:
@@ -192,6 +226,11 @@ def check_form(form: Form) -> list[str]:
     for s in form.slots:
         if s.type in ("choice", "dropdown", "multi") and len(s.options) < 2:
             problems.append(f"Slot '{s.label or s.id}' needs at least two options.")
+        if s.type == "result":
+            if len(s.verdicts) < 2:
+                problems.append("The result slot needs at least two verdict buttons.")
+            elif not set(s.accept) & set(s.verdicts):
+                problems.append("At least one verdict must allow adding the entry.")
         if s.type == "rating" and not s.minimum < s.maximum:
             problems.append(f"Slot '{s.label or s.id}': the lowest value must be below the highest.")
     if not 0.5 <= form.threshold <= 1.0:
@@ -259,6 +298,13 @@ def most_similar(question: str, accepted: list[dict], threshold: float) -> tuple
         if score > best:
             best, best_id = score, str(row.get("id", ""))
     return best, best_id
+
+
+def nearest(question: str, accepted: list[dict], n: int = 5) -> list[tuple[float, dict]]:
+    """The ``n`` accepted entries whose questions read most like this one, best first."""
+    scored = [(similarity(question, r.get("question", "")), r) for r in accepted]
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return scored[:n]
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -338,7 +384,8 @@ class Outcome:
 
 
 def submit(ws: WorkspaceConfig, form: Form, author: str, question: str, query: str,
-           columns: list, rows: list, answers: dict | None = None) -> Outcome:
+           columns: list, rows: list, answers: dict | None = None, verdict: str = "",
+           language: str = "sql") -> Outcome:
     """Store one entry: in benchmark.csv, or in rejected.csv when it repeats a question.
 
     The caller has already run the query; ``columns`` and ``rows`` are its result.
@@ -354,7 +401,8 @@ def submit(ws: WorkspaceConfig, form: Form, author: str, question: str, query: s
                "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                "question": question, "query": query, "row_count": len(rows),
                "result_columns": json.dumps(list(columns), ensure_ascii=False, default=str),
-               "result_preview": json.dumps(rows[:PREVIEW_ROWS], ensure_ascii=False, default=str)}
+               "result_preview": json.dumps(rows[:PREVIEW_ROWS], ensure_ascii=False, default=str),
+               "categories": ";".join(categories.detect(query, language)), "verdict": verdict}
         for s in form.slots:
             if s.column:
                 value = answers.get(s.id, "")
@@ -364,6 +412,8 @@ def submit(ws: WorkspaceConfig, form: Form, author: str, question: str, query: s
             row.update(similarity=f"{score:.3f}", matched_id=matched)
             _append(rejected_path(ws), row)
             return Outcome(False, entry_id, score, matched)
+        # Kept for added entries too, so admins can see near misses.
+        row.update(similarity=f"{score:.3f}", matched_id=matched if score else "")
         _append(accepted_path(ws), row)
         return Outcome(True, entry_id, score, matched)
 
@@ -375,4 +425,89 @@ def counts(ws: WorkspaceConfig) -> dict[str, dict[str, int]]:
         out.setdefault(r.get("author", ""), {"added": 0, "not_added": 0})["added"] += 1
     for r in read_rejected(ws):
         out.setdefault(r.get("author", ""), {"added": 0, "not_added": 0})["not_added"] += 1
+    return out
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Points and profiles
+# ──────────────────────────────────────────────────────────────────────────
+def language_of(form: Form) -> str:
+    from . import connections
+
+    conn = connections.get(form.connection)
+    return conn.language if conn else "sql"
+
+
+def entry_categories(row: dict, language: str) -> list[str]:
+    """Read again from the query, so every entry is judged by the same, current rules."""
+    query = row.get("query", "")
+    return categories.detect(query, language or categories.guess_language(query))
+
+
+def _verdict(row: dict) -> str:
+    # Entries from before verdict buttons were confirmed with a tick box: they count as correct.
+    return row.get("verdict") or "Correct"
+
+
+def earns_points(row: dict, form: Form) -> bool:
+    result = form.slot("result")
+    return _verdict(row) in (result.scored if result else ["Correct"])
+
+
+@dataclass
+class Profile:
+    person: str
+    added: int = 0
+    not_added: int = 0
+    total: int = 0
+    per_category: dict = field(default_factory=dict)   # id -> {"entries": n, "points": p}
+    verdicts: dict = field(default_factory=dict)       # verdict -> n
+    levels: dict = field(default_factory=dict)         # complexity -> n
+    entries: list = field(default_factory=list)        # accepted rows with "_categories", "_points", "_level"
+
+    def missing(self, form: Form) -> dict[str, int]:
+        """Points still needed, per category with a target."""
+        return {c: need - self.per_category.get(c, {}).get("points", 0)
+                for c, need in form.targets.items()
+                if self.per_category.get(c, {}).get("points", 0) < need}
+
+    def done(self, form: Form) -> bool:
+        return self.total >= form.min_total and not self.missing(form)
+
+
+def profiles(ws: WorkspaceConfig, form: Form | None = None) -> dict[str, Profile]:
+    form = form or load_form(ws)
+    language = language_of(form)
+    out: dict[str, Profile] = {}
+    for row in read_accepted(ws):
+        p = out.setdefault(row.get("author", ""), Profile(row.get("author", "")))
+        p.added += 1
+        v = _verdict(row)
+        p.verdicts[v] = p.verdicts.get(v, 0) + 1
+        cats = entry_categories(row, language)
+        worth, top = form.score(cats)
+        level = categories.complexity(cats)
+        earned = worth if earns_points(row, form) else 0
+        # The total takes one score per entry (its best category). Per category we count
+        # what the person has shown they can do, for the per-category minimums.
+        for c in cats:
+            slot = p.per_category.setdefault(c, {"entries": 0, "points": 0})
+            slot["entries"] += 1
+            slot["points"] += form.points_for(c) if earned else 0
+        p.total += earned
+        p.levels[level] = p.levels.get(level, 0) + 1
+        p.entries.append({**row, "_categories": cats, "_points": earned, "_level": level, "_top": top})
+    for row in read_rejected(ws):
+        out.setdefault(row.get("author", ""), Profile(row.get("author", ""))).not_added += 1
+    return out
+
+
+def category_totals(ws: WorkspaceConfig, form: Form | None = None) -> dict[str, int]:
+    """How many accepted entries fall in each category, across everyone."""
+    form = form or load_form(ws)
+    language = language_of(form)
+    out: dict[str, int] = {}
+    for row in read_accepted(ws):
+        for c in entry_categories(row, language):
+            out[c] = out.get(c, 0) + 1
     return out

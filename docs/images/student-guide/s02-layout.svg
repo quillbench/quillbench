@@ -1,0 +1,37 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 860 360' width='860' height='360'>
+<rect x='0' y='0' width='860' height='360' rx='10' fill='#ffffff' stroke='#ced4da' stroke-width='1'/>
+<rect x='0' y='0' width='860' height='34' rx='10' fill='#f1f3f5' stroke='#ced4da' stroke-width='1'/>
+<rect x='0' y='20' width='860' height='14' rx='6' fill='#f1f3f5' stroke='none' stroke-width='1'/>
+<circle cx='18' cy='17' r='6' fill='#fa5252'/>
+<circle cx='36' cy='17' r='6' fill='#fcc419'/>
+<circle cx='54' cy='17' r='6' fill='#51cf66'/>
+<text x='80' y='22' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='start'>After signing in</text>
+<rect x='0' y='34' width='210' height='326' rx='0' fill='#f8f9fa' stroke='none' stroke-width='1'/>
+<text x='20' y='66' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='14' fill='#212529' font-weight='600' text-anchor='start'>Mina</text>
+<text x='20' y='86' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>Annotator · mina</text>
+<text x='20' y='116' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>Workspace (paper)</text>
+<rect x='20' y='124' width='170' height='30' rx='6' fill='#fff' stroke='#ced4da' stroke-width='1'/>
+<text x='30' y='144' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#212529' text-anchor='start'>Traffic benchmark ▾</text>
+<circle cx='200' cy='139' r='12' fill='#e8590c'/>
+<text x='200' y='143.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>1</text>
+<text x='20' y='186' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>◯ Dark interface</text>
+<rect x='20' y='205' width='170' height='30' rx='6' fill='#fff' stroke='#3b5bdb' stroke-width='1'/>
+<text x='105.0' y='224' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#3b5bdb' font-weight='600' text-anchor='middle'>Sign out</text>
+<circle cx='200' cy='220' r='12' fill='#e8590c'/>
+<text x='200' y='224.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>4</text>
+<text x='268.6' y='70' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#e8590c' font-weight='600' text-anchor='middle'>Create</text>
+<rect x='240' y='77' width='57.2' height='3' rx='1' fill='#e8590c' stroke='none' stroke-width='1'/>
+<text x='341.0' y='70' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='middle'>Progress</text>
+<text x='416.99999999999994' y='70' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='middle'>Profile</text>
+<line x1='240' y1='80' x2='840' y2='80' stroke='#dee2e6'/>
+<circle cx='470' cy='64' r='12' fill='#e8590c'/>
+<text x='470' y='68.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>2</text>
+<text x='240' y='112' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>Added by you</text>
+<text x='240' y='146' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='30' fill='#212529' font-weight='600' text-anchor='start'>0</text>
+<circle cx='300' cy='136' r='12' fill='#e8590c'/>
+<text x='300' y='140.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>3</text>
+<rect x='240' y='168' width='590' height='40' rx='6' fill='#e7f5ff' stroke='#a5d8ff' stroke-width='1'/>
+<text x='250' y='192.0' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#212529' text-anchor='start'>Write questions a traffic engineer might ask. Use real road names.</text>
+<rect x='240' y='222' width='590' height='120' rx='6' fill='#fff' stroke='#adb5bd' stroke-width='1' stroke-dasharray='6 4'/>
+<text x='535' y='288' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#868e96' text-anchor='middle'>The form: about, schema, examples, question, query, result</text>
+</svg>

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from .. import accounts, benchmark, connections
+from .. import accounts, benchmark, categories, connections
 from ..builder import clean_labels
 from ..config import WorkspaceConfig
 from . import creator
@@ -44,6 +44,10 @@ def _collect(ws: WorkspaceConfig, form: benchmark.Form) -> None:
             s.step = ss.get(_k(ws, s, "step"), s.step)
         if s.type == "result":
             s.confirm = ss.get(_k(ws, s, "confirm"), s.confirm)
+            if _k(ws, s, "verdicts") in ss:
+                s.verdicts = clean_labels(ss[_k(ws, s, "verdicts")])
+            s.accept = [v for v in ss.get(_k(ws, s, "accept"), s.accept) if v in s.verdicts]
+            s.scored = [v for v in ss.get(_k(ws, s, "scored"), s.scored) if v in s.verdicts]
         if s.type == "examples" and _k(ws, s, "examples") in ss:
             table = ss[f"{_k(ws, s, 'examples')}_value"]
             s.examples = [{k: str(v) for k, v in row.items() if str(v or "").strip()}
@@ -54,6 +58,17 @@ def _collect(ws: WorkspaceConfig, form: benchmark.Form) -> None:
     form.participants = list(ss_form.get(f"fb_{ws.id}_people", form.participants))
     form.threshold = ss_form.get(f"fb_{ws.id}_thr", round(form.threshold * 100)) / 100
     form.min_rows = int(ss_form.get(f"fb_{ws.id}_rows", form.min_rows))
+    form.min_total = int(ss_form.get(f"fb_{ws.id}_min_total", form.min_total))
+    table = ss_form.get(f"fb_{ws.id}_points_value")
+    if table is not None:
+        form.points, form.targets = {}, {}
+        for row in table.to_dict("records"):
+            cid = row["id"]
+            pts = int(row.get("Points") or 0)
+            if pts != categories.BY_ID[cid].points:
+                form.points[cid] = pts
+            if int(row.get("Minimum per person") or 0) > 0:
+                form.targets[cid] = int(row["Minimum per person"])
 
 
 def _slot_editor(ws: WorkspaceConfig, form: benchmark.Form, i: int) -> None:
@@ -93,7 +108,16 @@ def _slot_editor(ws: WorkspaceConfig, form: benchmark.Form, i: int) -> None:
             b.number_input("Highest", value=float(s.maximum), key=_k(ws, s, "max"))
             c.number_input("Step", value=float(s.step), min_value=0.001, key=_k(ws, s, "step"))
         elif s.type == "result":
-            st.text_input("Check box text", value=s.confirm, key=_k(ws, s, "confirm"))
+            st.text_input("Question above the buttons", value=s.confirm, key=_k(ws, s, "confirm"))
+            st.text_area("Verdict buttons (one per line)", value="\n".join(s.verdicts),
+                         key=_k(ws, s, "verdicts"), height=90,
+                         help="Every entry stores which button the person chose, in the 'verdict' column.")
+            typed = clean_labels(st.session_state.get(_k(ws, s, "verdicts"), "\n".join(s.verdicts)))
+            a, b = st.columns(2)
+            a.multiselect("Can be added when marked", typed, default=[v for v in s.accept if v in typed],
+                          key=_k(ws, s, "accept"))
+            b.multiselect("Earns points when marked", typed, default=[v for v in s.scored if v in typed],
+                          key=_k(ws, s, "scored"))
         elif s.type == "examples":
             st.caption("One row per example. Rows without a question are dropped.")
             start = pd.DataFrame(s.examples or [], columns=["question", "query", "note"]).fillna("")
@@ -128,6 +152,29 @@ def _settings(ws: WorkspaceConfig, form: benchmark.Form) -> None:
                     help="1 means an empty result cannot be added.")
 
 
+def _points(ws: WorkspaceConfig, form: benchmark.Form) -> None:
+    """Points per category and the minimum each person should reach."""
+    conn = connections.get(form.connection)
+    language = conn.language if conn else "sql"
+    st.caption("The system finds the categories in each query by itself. Here you decide what "
+               "each category is worth and the minimum points each person should reach in it "
+               "(0 = no minimum). An entry earns the points of its most valuable category only. "
+               "Its complexity (Easy / Medium / Hard / Very hard) is fixed by the system.")
+    start = pd.DataFrame([{"id": c.id, "Category": c.label, "Example": c.hint,
+                           "Points": form.points_for(c.id),
+                           "Minimum per person": form.targets.get(c.id, 0)}
+                          for c in categories.for_language(language)])
+    value = st.data_editor(start, key=f"fb_{ws.id}_points", width="stretch", hide_index=True,
+                           disabled=["id", "Category", "Example"], column_order=["Category", "Points",
+                                                                                "Minimum per person", "Example"],
+                           column_config={"Points": st.column_config.NumberColumn(min_value=0, max_value=100, step=1),
+                                          "Minimum per person": st.column_config.NumberColumn(
+                                              min_value=0, max_value=1000, step=1)})
+    st.session_state[f"fb_{ws.id}_points_value"] = value
+    st.number_input("Minimum total points per person (0 = none)", 0, 100000, int(form.min_total),
+                    key=f"fb_{ws.id}_min_total")
+
+
 def render(ws: WorkspaceConfig) -> None:
     form = _draft(ws)
     note = st.session_state.pop(f"fb_note_{ws.id}", None)
@@ -135,6 +182,8 @@ def render(ws: WorkspaceConfig) -> None:
         st.success(note)
     st.markdown("**Settings**")
     _settings(ws, form)
+    with st.expander("**Categories and points**"):
+        _points(ws, form)
     st.divider()
     st.markdown("**Form**")
     for i in range(len(form.slots)):

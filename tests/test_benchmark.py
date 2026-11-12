@@ -8,6 +8,7 @@ import threading
 import time
 
 import pytest
+import yaml
 from streamlit.testing.v1 import AppTest
 
 from quillbench import accounts, benchmark, builder, connections, registry
@@ -210,6 +211,10 @@ def _btn(at, label):
     return next(b for b in at.button if b.label == label)
 
 
+def _verdict(at):
+    return next(r for r in at.radio if "Correct" in r.options)
+
+
 def test_participant_adds_an_entry_end_to_end(project):
     registry.add(project.root)
     at = _login(AppTest.from_file(APP), "alice")
@@ -221,8 +226,9 @@ def test_participant_adds_an_entry_end_to_end(project):
     _btn(at, "Run query").click()
     at.run(timeout=30)
     assert not at.exception, at.exception
-    assert _btn(at, "Add to benchmark").disabled          # the check box is not ticked yet
-    next(c for c in at.checkbox if "answers my question" in c.label).check()
+    assert _btn(at, "Add to benchmark").disabled          # no verdict chosen yet
+    assert any("Filter (WHERE)" in m.value for m in at.markdown)   # categories found by the system
+    _verdict(at).set_value("Correct")
     at.run(timeout=30)
     assert not _btn(at, "Add to benchmark").disabled
     _btn(at, "Add to benchmark").click()
@@ -232,6 +238,8 @@ def test_participant_adds_an_entry_end_to_end(project):
     assert len(rows) == 1 and rows[0]["author"] == "alice" and rows[0]["row_count"] == "1"
     assert next(m for m in at.metric if m.label == "Added by you").value == "1"
     assert any("Added to the benchmark" in s.value for s in at.success)
+    assert rows[0]["verdict"] == "Correct" and rows[0]["categories"] == "simple;filter"
+    assert any(t.label == "Profile" for t in at.tabs)
 
 
 def test_editing_the_query_after_running_locks_add_again(project):
@@ -242,7 +250,7 @@ def test_editing_the_query_after_running_locks_add_again(project):
     at.run(timeout=30)
     _btn(at, "Run query").click()
     at.run(timeout=30)
-    next(c for c in at.checkbox if "answers my question" in c.label).check()
+    _verdict(at).set_value("Correct")
     _field(at, "SQL query").input("SELECT name FROM station WHERE 1 = 0")
     at.run(timeout=30)
     assert _btn(at, "Add to benchmark").disabled
@@ -254,3 +262,83 @@ def test_non_participants_do_not_see_the_project(project):
     accounts.add_user("carol", "password1", "annotator")
     at = _login(AppTest.from_file(APP), "carol")
     assert any("Nothing is assigned to you" in i.value for i in at.info)
+
+
+# ── categories, points, verdicts ──────────────────────────────────────────
+def test_points_follow_categories_and_verdicts(project):
+    form = benchmark.load_form(project)
+    form.points = {"join": 5}
+    form.targets = {"join": 10, "group_by": 2}
+    form.min_total = 6
+    benchmark.save_form(project, form)
+    form = benchmark.load_form(project)
+    assert form.points_for("join") == 5 and form.points_for("filter") == 1
+    q = "SELECT s.city FROM station s JOIN line l ON l.id = s.line WHERE l.name = 'A'"
+    benchmark.submit(project, form, "alice", "Cities on line A", q, ["city"], [["x"]], verdict="Correct")
+    benchmark.submit(project, form, "alice", "Something quite different here", q, ["city"], [["x"]],
+                     verdict="Incorrect")
+    p = benchmark.profiles(project, form)["alice"]
+    assert p.added == 2 and p.total == 5                  # the best category only (join 5); Incorrect earns nothing
+    assert p.per_category["join"] == {"entries": 2, "points": 5}
+    assert p.entries[0]["_level"] == "Medium" and p.entries[0]["_top"] == "join"
+    assert form.score(["filter", "join", "avg"]) == (5, "join")
+    assert p.missing(form) == {"join": 5, "group_by": 2}
+    assert not p.done(form)
+    assert p.verdicts == {"Correct": 1, "Incorrect": 1}
+
+
+def test_old_entries_and_old_forms_still_work(project):
+    """Rows from before 1.9 have no verdict or categories; forms have the old tick box text."""
+    form = benchmark.load_form(project)
+    raw = yaml.safe_load(benchmark.form_path(project).read_text())
+    for s in raw["slots"]:
+        if s["type"] == "result":
+            s["confirm"] = "I checked the result, and it answers my question."
+            s.pop("verdicts", None)
+    benchmark.form_path(project).write_text(yaml.safe_dump(raw))
+    form = benchmark.load_form(project)
+    assert form.slot("result").verdicts == ["Correct", "Incorrect", "Uncertain"]
+    assert "I checked" not in form.slot("result").confirm
+    benchmark.data_dir(project).mkdir(parents=True, exist_ok=True)
+    benchmark.accepted_path(project).write_text(
+        "id,author,created_at,question,query,row_count,result_columns,result_preview\n"
+        "q_1,bob,2026-01-01,How many?,SELECT COUNT(*) FROM station,1,[],[]\n")
+    p = benchmark.profiles(project, form)["bob"]
+    assert p.total == 1 and "count" in p.per_category       # counted as Correct
+    benchmark.submit(project, form, "bob", "Totally new question", "SELECT name FROM station",
+                     ["name"], [["x"]], verdict="Uncertain")
+    rows = benchmark.read_accepted(project)
+    assert rows[0]["id"] == "q_1" and rows[1]["verdict"] == "Uncertain"
+
+
+def test_form_rejects_bad_verdict_settings(project):
+    form = benchmark.load_form(project)
+    form.slot("result").accept = ["Nope"]
+    assert any("verdict must allow" in p for p in benchmark.check_form(form))
+
+
+def test_similarity_is_kept_for_added_entries_and_nearest_ranks(project):
+    form = benchmark.load_form(project)
+    q = "SELECT name FROM station"
+    benchmark.submit(project, form, "alice", "Which holidays were there in May 2019?", q, ["n"], [["x"]], verdict="Correct")
+    out = benchmark.submit(project, form, "bob", "Which national holidays were in December 2019?", q,
+                           ["n"], [["x"]], verdict="Correct")
+    assert out.accepted and 0.6 < out.similarity < 0.8
+    rows = benchmark.read_accepted(project)
+    assert rows[1]["matched_id"] == rows[0]["id"] and float(rows[1]["similarity"]) == round(out.similarity, 3)
+    best = benchmark.nearest("What holidays were there in May 2019?", rows, 1)
+    assert best[0][1]["id"] == rows[0]["id"] and best[0][0] > 0.9
+
+
+def test_check_similarity_button(project):
+    registry.add(project.root)
+    form = benchmark.load_form(project)
+    benchmark.submit(project, form, "bob", "List every station", "SELECT name FROM station", ["n"], [["x"]],
+                     verdict="Correct")
+    at = _login(AppTest.from_file(APP), "alice")
+    _field(at, "Question").input("List every station please")
+    at.run(timeout=30)
+    _btn(at, "Check similarity").click()
+    at.run(timeout=30)
+    assert not at.exception, at.exception
+    assert any("would **not be added**" in e.value and "classmate" in e.value for e in at.error)

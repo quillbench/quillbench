@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.9.0 — 2026-11-12
+
+- **Queries are sorted into categories automatically.** When someone runs a query, QuillBench
+  reads it and shows the categories it falls into: simple lookup, filter, single and multi
+  join, outer join, COUNT, SUM, AVG, MIN, MAX, GROUP BY, HAVING, sorting, top-N, DISTINCT,
+  subquery, WITH, UNION, window functions, CASE, dates and times, text matching, NULL checks
+  and ranges; for Neo4j also one relationship, multi hop, variable-length and shortest paths.
+  Words inside strings and comments are ignored. The category ids are saved in a new
+  `categories` column.
+- **Points and targets.** Admins set the points each category is worth, the minimum points
+  each person should reach per category, and an overall minimum (form designer → Categories
+  and points). An entry earns the points of its most valuable category only. Totals are
+  recalculated from the saved queries, so changing the points later is fair to everyone.
+- **Complexity level for every query.** After a query runs, and on the Profile tab, each entry
+  shows its complexity, Easy, Medium, Hard or Very hard, set by the system from its hardest
+  category (it does not change when admins change the points).
+- **Profile tab.** Each person sees their points against the goal, points and entries per
+  category with progress bars, what is still needed, and all their entries. Admins can open
+  anyone's profile. The Progress page adds points and open targets per person and a chart of
+  entries per category.
+- **Verdict buttons instead of the tick box.** Under the result, people choose Correct,
+  Incorrect or Uncertain; admins can rename or add buttons and choose which verdicts may be
+  added and which earn points (by default all may be added, only Correct earns points). The
+  choice is saved in a new `verdict` column. Entries made before this version count as Correct.
+- **Check similarity before adding.** A *Check similarity* button under the question says how
+  close it is to the nearest question in the benchmark and whether it would be added (a
+  classmate's question is never shown). Admins get a *Similarity checker* on the Progress tab:
+  the 10 closest questions to any text, and the added pairs that came closest to the limit.
+  Added entries now also keep `similarity` and `matched_id`.
+- **Only admins can download data.** The hover toolbar on tables (with *Download as CSV*) is
+  hidden for everyone else.
+
 ## 1.8.1 — 2026-11-11
 
 - **Connect to a database by host and port.** Under Admin → Connections, enter where the

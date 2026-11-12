@@ -63,6 +63,14 @@ the entry to `benchmark.csv` in the project folder.
    since it ran, and the result box is ticked. A question 80% or more similar to an accepted
    one is not added; it goes to `rejected.csv` with the id and score of the entry it matched.
 
+Every query is sorted into categories by the system (simple lookup, filter, single or multi
+join, COUNT/SUM/AVG/MIN/MAX, GROUP BY, HAVING, top-N, subquery, WITH, window functions,
+dates, and for Neo4j one-hop, multi-hop, variable-length and shortest paths). Admins set the
+points per category and the minimum points each person should reach, per category and in
+total. People give a verdict on their result (Correct / Incorrect / Uncertain, or the admin's
+own buttons), and see their points and open targets on a **Profile** tab. The step-by-step
+guide for admins is in [docs/admin-guide.md](docs/admin-guide.md).
+
 ## Task types
 
 | task | what the annotator does |

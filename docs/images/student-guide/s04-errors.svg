@@ -1,0 +1,25 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 860 300' width='860' height='300'>
+<rect x='0' y='0' width='860' height='300' rx='10' fill='#ffffff' stroke='#ced4da' stroke-width='1'/>
+<rect x='0' y='0' width='860' height='34' rx='10' fill='#f1f3f5' stroke='#ced4da' stroke-width='1'/>
+<rect x='0' y='20' width='860' height='14' rx='6' fill='#f1f3f5' stroke='none' stroke-width='1'/>
+<circle cx='18' cy='17' r='6' fill='#fa5252'/>
+<circle cx='36' cy='17' r='6' fill='#fcc419'/>
+<circle cx='54' cy='17' r='6' fill='#51cf66'/>
+<text x='80' y='22' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#495057' text-anchor='start'>When the query has a problem</text>
+<rect x='30' y='50' width='800' height='70' rx='6' fill='#fff' stroke='#ced4da' stroke-width='1'/>
+<text x='44' y='72' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>SQL query</text>
+<text x='54' y='100' font-family='Menlo,Consolas,monospace' font-size='12' fill='#212529' text-anchor='start'>SELECT name, speed FROM roads</text>
+<rect x='30' y='132' width='800' height='34' rx='6' fill='#fff5f5' stroke='#ffa8a8' stroke-width='1'/>
+<text x='40' y='153.0' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#212529' text-anchor='start'>no such table: roads</text>
+<circle cx='845' cy='149' r='12' fill='#e8590c'/>
+<text x='845' y='153.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>1</text>
+<rect x='30' y='178' width='800' height='34' rx='6' fill='#fff5f5' stroke='#ffa8a8' stroke-width='1'/>
+<text x='40' y='199.0' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#212529' text-anchor='start'>Not run: only read queries (SELECT or WITH) can run.</text>
+<circle cx='845' cy='195' r='12' fill='#e8590c'/>
+<text x='845' y='199.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>2</text>
+<rect x='30' y='224' width='800' height='34' rx='6' fill='#fff9db' stroke='#ffe066' stroke-width='1'/>
+<text x='40' y='245.0' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#212529' text-anchor='start'>The query returned no rows. Entries need at least 1 row in the result.</text>
+<circle cx='845' cy='241' r='12' fill='#e8590c'/>
+<text x='845' y='245.5' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='13' fill='#fff' font-weight='600' text-anchor='middle'>3</text>
+<text x='30' y='284' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif' font-size='12' fill='#495057' text-anchor='start'>Add to benchmark stays grey until the problem is fixed and the query is run again.</text>
+</svg>
