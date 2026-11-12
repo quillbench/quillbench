@@ -226,10 +226,9 @@ def test_participant_adds_an_entry_end_to_end(project):
     _btn(at, "Run query").click()
     at.run(timeout=30)
     assert not at.exception, at.exception
-    assert _btn(at, "Add to benchmark").disabled          # no verdict chosen yet
-    assert any("Filter (WHERE)" in m.value for m in at.markdown)   # categories found by the system
-    _verdict(at).set_value("Correct")
-    at.run(timeout=30)
+    assert any("Complexity: Easy" in m.value for m in at.markdown)
+    assert not any("Filter (WHERE)" in m.value for m in at.markdown)   # categories are for admins
+    assert not any("Correct" in r.options for r in at.radio)           # no verdict asked by default
     assert not _btn(at, "Add to benchmark").disabled
     _btn(at, "Add to benchmark").click()
     at.run(timeout=30)
@@ -237,9 +236,9 @@ def test_participant_adds_an_entry_end_to_end(project):
     rows = benchmark.read_accepted(project)
     assert len(rows) == 1 and rows[0]["author"] == "alice" and rows[0]["row_count"] == "1"
     assert next(m for m in at.metric if m.label == "Added by you").value == "1"
-    assert any("Added to the benchmark" in s.value for s in at.success)
-    assert rows[0]["verdict"] == "Correct" and rows[0]["categories"] == "simple;filter"
-    assert any(t.label == "Profile" for t in at.tabs)
+    assert any("Added as" in t.value for t in at.toast)
+    assert rows[0]["verdict"] == "" and rows[0]["categories"] == "simple;filter"
+    assert [t.label for t in at.tabs][:4] == ["Create", "Schema", "Progress", "Profile"]
 
 
 def test_editing_the_query_after_running_locks_add_again(project):
@@ -250,7 +249,6 @@ def test_editing_the_query_after_running_locks_add_again(project):
     at.run(timeout=30)
     _btn(at, "Run query").click()
     at.run(timeout=30)
-    _verdict(at).set_value("Correct")
     _field(at, "SQL query").input("SELECT name FROM station WHERE 1 = 0")
     at.run(timeout=30)
     assert _btn(at, "Add to benchmark").disabled
@@ -267,6 +265,7 @@ def test_non_participants_do_not_see_the_project(project):
 # ── categories, points, verdicts ──────────────────────────────────────────
 def test_points_follow_categories_and_verdicts(project):
     form = benchmark.load_form(project)
+    form.slot("result").ask_verdict = True
     form.points = {"join": 5}
     form.targets = {"join": 10, "group_by": 2}
     form.min_total = 6
@@ -313,6 +312,7 @@ def test_old_entries_and_old_forms_still_work(project):
 
 def test_form_rejects_bad_verdict_settings(project):
     form = benchmark.load_form(project)
+    form.slot("result").ask_verdict = True
     form.slot("result").accept = ["Nope"]
     assert any("verdict must allow" in p for p in benchmark.check_form(form))
 
@@ -341,4 +341,38 @@ def test_check_similarity_button(project):
     _btn(at, "Check similarity").click()
     at.run(timeout=30)
     assert not at.exception, at.exception
-    assert any("would **not be added**" in e.value and "classmate" in e.value for e in at.error)
+    assert any("would not be added" in t.value and "already in the benchmark" in t.value for t in at.toast)
+    assert not any("every station”" in t.value for t in at.toast)    # a classmate's text is not shown
+
+
+def test_verdict_buttons_when_the_admin_turns_them_on(project):
+    form = benchmark.load_form(project)
+    form.slot("result").ask_verdict = True
+    benchmark.save_form(project, form)
+    registry.add(project.root)
+    at = _login(AppTest.from_file(APP), "alice")
+    _field(at, "Question").input("Which city is the North station in?")
+    _field(at, "SQL query").input("SELECT city FROM station WHERE name = 'North'")
+    at.run(timeout=30)
+    _btn(at, "Run query").click()
+    at.run(timeout=30)
+    assert _btn(at, "Add to benchmark").disabled
+    _verdict(at).set_value("Uncertain")
+    at.run(timeout=30)
+    _btn(at, "Add to benchmark").click()
+    at.run(timeout=30)
+    assert benchmark.read_accepted(project)[0]["verdict"] == "Uncertain"
+    p = benchmark.profiles(project)["alice"]
+    assert p.total == 0                                    # only Correct earns points
+
+
+def test_schema_tab_shows_overview_and_one_table(project):
+    registry.add(project.root)
+    at = _login(AppTest.from_file(APP), "alice")
+    assert any("station(" in c.value for c in at.code)       # copyable overview, in a collapsible
+    assert any("All tables at a glance" in e.label for e in at.expander)
+    pick = next(s for s in at.selectbox if s.label == "Choose a table")
+    pick.set_value("station")
+    at.run(timeout=30)
+    assert not at.exception, at.exception
+    assert any("First 10 rows" in m.value for m in at.markdown)

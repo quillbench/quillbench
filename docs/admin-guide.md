@@ -370,17 +370,19 @@ The slot types you can add:
 | Slot | What people see | Saved as a column? |
 |---|---|---|
 | Text block | Your instructions or domain notes (Markdown allowed) | no |
-| Database schema | The live list of tables and columns, with a search box | no |
+| Database schema | Settings for the **Schema tab** (it is not shown on the Create page): which tables people see, a note per table, and whether the first 10 rows are shown | no |
 | Worked examples | Example question + query pairs, each with a **Run this example** button | no |
 | Question | A box to write the question | **yes** (always) |
 | Query editor | A box for the query and a **Run query** button | **yes** (always) |
-| Query result and verdict buttons | The result table, the categories found, and buttons **Correct / Incorrect / Uncertain** | **yes** (always) |
+| Query result (and optional verdict) | The result table, the complexity and points; verdict buttons only if you switch them on | **yes** (always) |
 | Label buttons / Dropdown | Pick one option (e.g. difficulty: Easy / Medium / Hard) | yes |
 | Tick boxes | Pick any number of options | yes |
 | Slider | A number in a range | yes |
 | Short answer / Paragraph | Free text | yes |
 
-In the **result** slot you can rename the verdict buttons or add more (one per line, e.g.
+Verdicts are **off** by default: people run the query and add it, and every added entry earns
+points. To collect opinions, tick **Ask people for their verdict on the result** in the result
+slot. Then you can rename the verdict buttons or add more (one per line, e.g.
 `Correct`, `Incorrect`, `Uncertain`, `Partly correct`), and choose:
 
 - **Can be added when marked** — which verdicts are allowed into the benchmark (normally all,
@@ -405,9 +407,13 @@ They choose the project in the left menu and open the **Create** tab.
 |---|---|
 | **1** | Their count of **added** entries, and the message from their last attempt (green = added, red = not added and why). |
 | **2** | They write the query and click **Run query**. The result appears below. |
-| **3** | They give their opinion of the result: **Correct**, **Incorrect** or **Uncertain** (or your own buttons). |
+| **3** | The complexity and points of the query. People see only these; the categories behind them are shown to admins only. If you switched verdicts on, the verdict buttons appear here too. |
 | **4** | **Add to benchmark** becomes blue only when everything is ready (next picture). |
-| **5** | **Complexity and categories:** after the query runs, the system shows its complexity (Easy, Medium, Hard or Very hard), its points, and the categories it falls into (join, group by, average, …). Nobody chooses these by hand. |
+| **1** (pop-up) | After **Add**, a pop-up in the corner says whether it was added, its complexity and points, or why it was not added. |
+
+Tables and columns are on a separate **Schema** tab: a dropdown to pick one table and see its
+columns, row count, your note and its first 10 rows, and below it a collapsible, copyable list
+of every table.
 
 ![When can an entry be added](images/admin-guide/11-add-rules.svg)
 
@@ -460,6 +466,10 @@ you change the points halfway through the course, everyone's totals update fairl
 ### 7.6 The Profile tab
 
 Every person in a benchmark project has a **Profile** tab with their own performance.
+Students see their points, goal, targets left, what is still needed, the complexity of their
+entries and the list of their entries. The per-category points table and **How points and
+complexity work** are shown to **admins only**, so students see their scores but not how they
+are worked out. The picture below is the admin's view.
 
 ![The Profile tab](images/admin-guide/12-profile.svg)
 

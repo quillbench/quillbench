@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from .. import accounts, benchmark, categories, connections
+from .. import accounts, benchmark, categories, connections, schema_info
 from ..builder import clean_labels
 from ..config import WorkspaceConfig
 from . import creator
@@ -38,11 +38,19 @@ def _collect(ws: WorkspaceConfig, form: benchmark.Form) -> None:
             s.text = ss.get(_k(ws, s, "text"), s.text)
         if s.type in ("choice", "dropdown", "multi") and _k(ws, s, "options") in ss:
             s.options = clean_labels(ss[_k(ws, s, "options")])
+        if s.type == "schema":
+            s.tables = list(ss.get(_k(ws, s, "tables"), s.tables))
+            s.samples = ss.get(_k(ws, s, "samples"), s.samples)
+            notes = ss.get(f"{_k(ws, s, 'notes')}_value")
+            if notes is not None:
+                s.notes = {str(r["Table"]): str(r["Note"]).strip() for r in notes.to_dict("records")
+                           if str(r.get("Note") or "").strip() and str(r.get("Table") or "").strip()}
         if s.type == "rating":
             s.minimum = ss.get(_k(ws, s, "min"), s.minimum)
             s.maximum = ss.get(_k(ws, s, "max"), s.maximum)
             s.step = ss.get(_k(ws, s, "step"), s.step)
         if s.type == "result":
+            s.ask_verdict = ss.get(_k(ws, s, "ask"), s.ask_verdict)
             s.confirm = ss.get(_k(ws, s, "confirm"), s.confirm)
             if _k(ws, s, "verdicts") in ss:
                 s.verdicts = clean_labels(ss[_k(ws, s, "verdicts")])
@@ -97,8 +105,10 @@ def _slot_editor(ws: WorkspaceConfig, form: benchmark.Form, i: int) -> None:
         if s.type == "text":
             st.text_area("Text (Markdown)", value=s.text, key=_k(ws, s, "text"), height=120)
         elif s.type == "schema":
-            st.text_area("Note above the schema (optional)", value=s.text, key=_k(ws, s, "text"),
+            st.caption("People see the schema on its own **Schema** tab, not on the Create page.")
+            st.text_area("Note at the top of the Schema tab (optional)", value=s.text, key=_k(ws, s, "text"),
                          height=70, help="The tables and columns are read live from the database.")
+            _schema_settings(ws, form, s)
         elif s.type in ("choice", "dropdown", "multi"):
             st.text_area("Options (one per line)", value="\n".join(s.options), key=_k(ws, s, "options"),
                          height=100)
@@ -108,6 +118,11 @@ def _slot_editor(ws: WorkspaceConfig, form: benchmark.Form, i: int) -> None:
             b.number_input("Highest", value=float(s.maximum), key=_k(ws, s, "max"))
             c.number_input("Step", value=float(s.step), min_value=0.001, key=_k(ws, s, "step"))
         elif s.type == "result":
+            ask = st.checkbox("Ask people for their verdict on the result (e.g. Correct / Incorrect / "
+                              "Uncertain)", value=s.ask_verdict, key=_k(ws, s, "ask"),
+                              help="Off: people only run the query and add it; every added entry earns points.")
+            if not ask:
+                return
             st.text_input("Question above the buttons", value=s.confirm, key=_k(ws, s, "confirm"))
             st.text_area("Verdict buttons (one per line)", value="\n".join(s.verdicts),
                          key=_k(ws, s, "verdicts"), height=90,
@@ -129,6 +144,31 @@ def _slot_editor(ws: WorkspaceConfig, form: benchmark.Form, i: int) -> None:
             st.session_state[f"{_k(ws, s, 'examples')}_value"] = value
         if s.column:
             st.checkbox("Required", value=s.required, key=_k(ws, s, "required"))
+
+
+def _schema_settings(ws: WorkspaceConfig, form: benchmark.Form, s: benchmark.Slot) -> None:
+    """Which tables people see, notes on them, and example rows."""
+    conn = connections.get(form.connection)
+    names: list[str] = []
+    if conn is not None:
+        tables, err = schema_info.describe(conn)
+        if err:
+            st.caption(f"Could not read the database: {err}")
+        names = list(tables)
+    keep = [n for n in s.tables if n in names] + [n for n in s.tables if n not in names]
+    st.multiselect("Tables people see (empty = all)", names + [n for n in s.tables if n not in names],
+                   default=keep, key=_k(ws, s, "tables"),
+                   help="Hide temporary or internal tables so people focus on the useful ones.")
+    st.checkbox("Show the first 10 rows of the chosen table", value=s.samples, key=_k(ws, s, "samples"))
+    st.caption("Notes per table, shown at the top of the table. Explain meanings, units and codes, "
+               "e.g. 'offer_day is the date as a number, 20190501 = 1 May 2019'.")
+    choices = s.tables or names
+    start = pd.DataFrame([{"Table": n, "Note": s.notes.get(n, "")} for n in sorted(set(s.notes) | set(choices))]
+                         or [{"Table": "", "Note": ""}])
+    value = st.data_editor(start, key=_k(ws, s, "notes"), width="stretch", hide_index=True, num_rows="dynamic",
+                           column_config={"Table": st.column_config.TextColumn("Table", width="small"),
+                                          "Note": st.column_config.TextColumn("Note", width="large")})
+    st.session_state[f"{_k(ws, s, 'notes')}_value"] = value
 
 
 def _settings(ws: WorkspaceConfig, form: benchmark.Form) -> None:
@@ -222,4 +262,4 @@ def render(ws: WorkspaceConfig) -> None:
     preview = s3.toggle("Preview saved form", key=f"fb_{ws.id}_preview")
     if preview:
         st.caption("This is the saved form as people see it. Entries added here are real.")
-        creator.render(ws, st.session_state.get("annotator", ""), prefix="preview")
+        creator.render(ws, st.session_state.get("annotator", ""), prefix="preview", is_admin=True)

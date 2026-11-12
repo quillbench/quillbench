@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.10.0 — 2026-11-12
+
+- **A fuller schema for the people writing queries**: columns, types, primary keys, links to
+  other tables (foreign keys), descriptions stored in the database and an estimated row count.
+  Tables split by date (`x_201904`, `x_201905`, …) and PostgreSQL partitions are shown once,
+  with their parts listed; PostGIS bookkeeping tables are hidden.
+- **Schema on its own tab.** Benchmark projects get a **Schema** tab: a dropdown to pick one
+  table and see its columns, keys, row count, the admin's note and its first 10 rows; below it,
+  a collapsible one-line-per-table overview with a copy button (handy for an AI assistant).
+- **Students see their scores, not the scoring rules.** Categories, points per category and
+  the "how points work" table are for admins only; students see complexity, points, targets
+  left and what is still needed.
+- **Verdicts are optional and off by default.** Admins switch them on per project.
+- **Pop-up notifications** for the result of *Add to benchmark* and *Check similarity*.
+- **Admins choose what the schema shows**: which tables people see, a note per table
+  (meanings, units, codes), and whether the first 10 rows are shown.
+
 ## 1.9.0 — 2026-11-12
 
 - **Queries are sorted into categories automatically.** When someone runs a query, QuillBench

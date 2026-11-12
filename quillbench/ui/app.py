@@ -245,7 +245,7 @@ if user_is_admin and (errors or warnings):
 
 is_bench = benchmark.is_benchmark(ws)
 work_tab = "Create" if is_bench else "Annotate"
-tab_names = [work_tab, "Progress"] + (["Profile"] if is_bench else [])
+tab_names = [work_tab] + (["Schema"] if is_bench else []) + ["Progress"] + (["Profile"] if is_bench else [])
 # Admins only: the console can load any item's reference query, which would let a
 # blind reviewer see what the study hides from them.
 if ws.graph_targets and user_is_admin:
@@ -257,7 +257,7 @@ tabs = dict(zip(tab_names, st.tabs(tab_names)))
 with tabs[work_tab]:
     my_batches = [] if is_bench else visible_batches(ws, me)
     if is_bench:
-        creator.render(ws, me)
+        creator.render(ws, me, is_admin=user_is_admin)
     elif not my_batches:
         st.info("No batches are assigned to you in this workspace.")
     else:
@@ -286,6 +286,10 @@ with tabs[work_tab]:
             generic.render(ws, me, active, bar, next_batch)
         else:
             query_review.render(ws, me, accounts.legacy_view(ws, users), active, bar, next_batch)
+
+if "Schema" in tabs:
+    with tabs["Schema"]:
+        creator.schema_page(ws)
 
 if "Profile" in tabs:
     with tabs["Profile"]:

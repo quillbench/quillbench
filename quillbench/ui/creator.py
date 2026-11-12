@@ -7,16 +7,23 @@ import hashlib
 import pandas as pd
 import streamlit as st
 
-from .. import benchmark, categories, connections
+from .. import benchmark, categories, connections, schema_info
 from ..config import WorkspaceConfig
 
 
-@st.cache_data(ttl=600, show_spinner="Reading the schema…")
-def _schema(conn_id: str, _stamp: str) -> tuple[dict, str | None]:
+@st.cache_data(ttl=600, show_spinner="Reading the database structure…")
+def _describe(conn_id: str, _stamp: str) -> tuple[dict, str | None]:
     conn = connections.get(conn_id)
     if conn is None:
         return {}, "The database connection for this project was removed. Tell the study owner."
-    return connections.schema(conn)
+    return schema_info.describe(conn)
+
+
+@st.cache_data(ttl=600, show_spinner="Reading example rows…")
+def _samples(conn_id: str, _stamp: str, table: str) -> connections.QueryResult:
+    conn = connections.get(conn_id)
+    tables, _ = schema_info.describe(conn)
+    return connections.run(conn, schema_info.sample_query(conn, tables[table], 10), timeout=30, cap=10)
 
 
 def _conn_stamp(conn: connections.Connection | None) -> str:
@@ -44,27 +51,105 @@ def _show_result(res: connections.QueryResult, min_rows: int) -> None:
                    f"{min_rows} row{'s' if min_rows > 1 else ''} in the result.")
 
 
-def _schema_slot(slot: benchmark.Slot, conn: connections.Connection | None, key: str) -> None:
-    if slot.text:
-        st.markdown(slot.text)
+def _cell(v) -> str:
+    text = "" if v is None else str(v)
+    return text if len(text) <= 60 else text[:57] + "…"
+
+
+def _compact(tables: dict) -> str:
+    """Every table and its columns with types, as plain text people can copy (e.g. into a chatbot)."""
+    lines = []
+    for n, tb in tables.items():
+        cols = ", ".join(f"{c.name} {c.type}".strip() + (f" [{c.key}]" if c.key else "") for c in tb.columns)
+        extra = f"  -- {tb.comment}" if tb.comment and not tb.comment.startswith("public.") and tb.comment != n else ""
+        lines.append(f"{n}({cols}){extra}")
+    return "\n".join(lines)
+
+
+def schema_page(ws: WorkspaceConfig) -> None:
+    """The Schema tab: a copyable overview, then one table at a time with its first rows."""
+    form = benchmark.load_form(ws)
+    conn = connections.get(form.connection)
+    slot = form.slot("schema") or benchmark.Slot("schema", "schema")
     if conn is None:
         st.warning("No database connection is set for this project.")
         return
-    tables, err = _schema(conn.id, _conn_stamp(conn))
+    tables, err = _describe(conn.id, _conn_stamp(conn))
     if err:
-        st.error(f"Could not read the schema: {err}")
+        st.error(f"Could not read the database structure: {err}")
         return
+    if slot.tables:
+        tables = {n: tb for n, tb in tables.items() if n in slot.tables}
     if not tables:
         st.caption("The database has no tables.")
         return
-    find = st.text_input("Find a table or column", key=f"{key}_find",
-                         placeholder="Type to filter", label_visibility="collapsed")
-    word = find.strip().lower()
-    shown = {t: cols for t, cols in tables.items()
-             if not word or word in t.lower() or any(word in c.lower() for c in cols)}
-    st.caption(f"{len(shown)} of {len(tables)} {'labels and relationships' if conn.engine == 'neo4j' else 'tables'}")
-    lines = [f"{t}({', '.join(cols)})" for t, cols in shown.items()]
-    st.code("\n".join(lines) or "(nothing matches)", language=None, wrap_lines=True)
+    if slot.text:
+        st.markdown(slot.text)
+    graph = conn.engine == "neo4j"
+    noun = "label or relationship" if graph else "table"
+
+    st.markdown(f"**Look at one {noun}**")
+
+    def label(n: str) -> str:
+        tb = tables[n]
+        desc = f" — {tb.comment}" if tb.comment and not tb.comment.startswith("public.") and tb.comment != n else ""
+        return f"{n}{desc}"
+
+    pick = st.selectbox(f"Choose a {noun}", list(tables), index=None, format_func=label,
+                        placeholder=f"Choose a {noun} (type to search)", key=f"schema_pick_{ws.id}")
+    if pick is not None:
+        _one_table(conn, slot, tables, pick, graph)
+
+    with st.expander("All tables at a glance (copyable)"):
+        st.caption("Every table with its columns and types. Use the copy button on the right of the box "
+                   "to paste it elsewhere, e.g. into an AI assistant, while working out a query.")
+        st.code(_compact(tables), language=None, wrap_lines=True)
+
+
+def _one_table(conn: connections.Connection, slot: benchmark.Slot, tables: dict, pick: str,
+               graph: bool) -> None:
+    tb = tables[pick]
+    facts = [f"{len(tb.columns)} {'properties' if graph else 'columns'}"]
+    if tb.rows:
+        facts.append(f"about {tb.rows:,} rows")
+    if tb.parts:
+        facts.append(f"{len(tb.parts)} parts")
+    st.markdown(f"#### {pick}")
+    st.caption(" · ".join(facts))
+    note = slot.notes.get(pick, "")
+    if note:
+        st.info(note)
+    if tb.comment and tb.comment != pick and not tb.comment.startswith("public."):
+        st.caption(f"Description in the database: {tb.comment}")
+    if tb.parts:
+        if tb.parent:
+            st.caption(f"Stored in {len(tb.parts)} parts with the same columns: {tb.parts[0]} … "
+                       f"{tb.parts[-1]}. Query **{pick}** to use them all, or one part for a single period.")
+        else:
+            st.caption(f"One table per period, all with the same columns: {', '.join(tb.parts)}. "
+                       "Query the one you need, or combine them with UNION ALL.")
+    frame = pd.DataFrame([{"Column" if not graph else "Property": c.name, "Type": c.type,
+                           "Key": c.key, "Description": c.comment} for c in tb.columns])
+    for col in ("Key", "Description"):
+        if col in frame and not frame[col].astype(bool).any():
+            frame = frame.drop(columns=col)
+    st.table(frame.set_index(frame.columns[0]))
+    if slot.samples:
+        st.markdown("**First 10 rows**")
+        res = _samples(conn.id, _conn_stamp(conn), pick)
+        if not res.ok:
+            st.error(res.error)
+        elif not res.rows:
+            st.caption("This table is empty.")
+        else:
+            st.dataframe(pd.DataFrame([[_cell(v) for v in r] for r in res.rows], columns=res.columns),
+                         width="stretch", hide_index=True)
+    if not graph:
+        shared = [(c, ts) for c, ts in schema_info.shared_columns(tables, limit=500) if pick in ts]
+        if shared:
+            with st.expander("Other tables with the same column names (ways to join)"):
+                st.table(pd.DataFrame([{"Column": c, "Also in": ", ".join(x for x in ts if x != pick)}
+                                       for c, ts in shared]).set_index("Column"))
 
 
 def _examples_slot(slot: benchmark.Slot, conn: connections.Connection | None, key: str,
@@ -81,35 +166,35 @@ def _examples_slot(slot: benchmark.Slot, conn: connections.Connection | None, ke
                 _show_result(connections.run(conn, ex["query"]), 0)
 
 
-def _chips(cats: list[str], form: benchmark.Form) -> None:
-    """The categories the system found, and the complexity and points of the query."""
+def _chips(cats: list[str], form: benchmark.Form, is_admin: bool = False) -> None:
+    """Complexity and points of the query; admins also see the categories behind them."""
     if not cats:
         return
     worth, top = form.score(cats)
     level = categories.complexity(cats)
-    chips = " ".join(f":blue-badge[{categories.label(c)}]" for c in cats)
-    st.markdown(f"**Complexity: {level}** · {worth} points (from *{categories.label(top)}*)  \n"
-                f"Categories found: {chips}")
-    st.caption("A query earns the points of its hardest category. Points are given when it is "
-               f"added and marked {' or '.join(form.slot('result').scored) or 'as scored'}. "
-               "The system finds the categories itself.")
+    st.markdown(f"**Complexity: {level}** · {worth} points if added")
+    if is_admin:
+        chips = " ".join(f":blue-badge[{categories.label(c)}]" for c in cats)
+        st.caption(f"Admins only: from *{categories.label(top)}*. Categories found: ")
+        st.markdown(chips)
 
 
-def _similarity_note(ws: WorkspaceConfig, form: benchmark.Form, question: str, me: str) -> None:
-    """How close the question is to the nearest accepted one, before trying to add it."""
+def _similarity_note(ws: WorkspaceConfig, form: benchmark.Form, question: str, me: str,
+                     is_admin: bool = False) -> None:
+    """How close the question is to the nearest accepted one, as a pop-up."""
     best = benchmark.nearest(question, benchmark.read_accepted(ws), 1)
     if not best or best[0][0] == 0:
-        st.success("Nothing similar in the benchmark yet.")
+        st.toast("Nothing similar in the benchmark yet.", icon="✅", duration="long")
         return
     score, row = best[0]
     own = row.get("author") == me
-    who = f"your entry {row.get('id')}: “{row.get('question', '')}”" if own else "a classmate's question"
+    who = (f"your entry “{row.get('question', '')}”" if own or is_admin else "a question already in the benchmark")
     if score >= form.threshold:
-        st.error(f"{score:.0%} similar to {who}. The limit is {form.threshold:.0%}, so this would "
-                 "**not be added**. Ask about something different.")
+        st.toast(f"{score:.0%} similar to {who}. The limit is {form.threshold:.0%}: this would not be "
+                 "added. Ask about something different.", icon="⚠️", duration="long")
     else:
-        st.success(f"Closest existing question is {score:.0%} similar ({who}). The limit is "
-                   f"{form.threshold:.0%}, so this can be added.")
+        st.toast(f"Closest is {score:.0%} similar ({who}). The limit is {form.threshold:.0%}: "
+                 "this can be added.", icon="✅", duration="long")
 
 
 def _input(slot: benchmark.Slot, key: str):
@@ -143,7 +228,7 @@ def _filled(value) -> bool:
     return bool(str(value).strip())
 
 
-def render(ws: WorkspaceConfig, me: str, prefix: str = "") -> None:
+def render(ws: WorkspaceConfig, me: str, prefix: str = "", is_admin: bool = False) -> None:
     form = benchmark.load_form(ws)
     problems = benchmark.check_form(form)
     if problems:
@@ -159,14 +244,13 @@ def render(ws: WorkspaceConfig, me: str, prefix: str = "") -> None:
     run_key = f"bm{prefix}_run_{ws.id}"
 
     mine = benchmark.counts(ws).get(me, {"added": 0, "not_added": 0})
-    c1, c2 = st.columns([1, 3])
-    c1.metric("Added by you", mine["added"])
+    # The outcome of the last Add, as a pop-up that fades away.
     note = st.session_state.pop(f"bm{prefix}_note_{ws.id}", None)
-    with c2:
-        if note and note[0] == "ok":
-            st.success(note[1])
-        elif note:
-            st.error(note[1])
+    if note:
+        st.toast(note[1], icon="✅" if note[0] == "ok" else "⚠️", duration="long")
+    c1, c2 = st.columns([1, 3], vertical_alignment="center")
+    c1.metric("Added by you", mine["added"])
+    c2.caption("The tables and columns are on the **Schema** tab.")
     if project.instructions:
         st.info(project.instructions)
 
@@ -174,15 +258,16 @@ def render(ws: WorkspaceConfig, me: str, prefix: str = "") -> None:
     answers: dict = {}
     question = query = ""
     verdict = None
+    result_slot = form.slot("result")
     for slot in form.slots:
+        if slot.type == "schema":
+            continue        # shown on its own tab
         skey = f"{key}_{slot.id}"
         with st.container(border=True):
-            if slot.type in ("text", "schema", "examples", "result") and slot.label:
+            if slot.type in ("text", "examples", "result") and slot.label:
                 st.markdown(f"**{slot.label}**")
             if slot.type == "text":
                 st.markdown(slot.text)
-            elif slot.type == "schema":
-                _schema_slot(slot, conn, skey)
             elif slot.type == "examples":
                 _examples_slot(slot, conn, skey, form.min_rows)
             elif slot.type == "question":
@@ -190,7 +275,7 @@ def render(ws: WorkspaceConfig, me: str, prefix: str = "") -> None:
                                         help=slot.help or None)
                 if st.button("Check similarity", key=f"{skey}_sim", disabled=not question.strip(),
                              help="Compares your question with every question already in the benchmark."):
-                    _similarity_note(ws, form, question, me)
+                    _similarity_note(ws, form, question, me, is_admin)
             elif slot.type == "query":
                 editor = st.container(key=f"qb_query_editor{prefix}_{ws.id}")
                 query = editor.text_area(slot.label or "Query", key=skey, height=180,
@@ -210,9 +295,10 @@ def render(ws: WorkspaceConfig, me: str, prefix: str = "") -> None:
                 else:
                     _show_result(last["result"], form.min_rows)
                     if last["result"].ok:
-                        _chips(categories.detect(query, language), form)
-                verdict = st.radio(slot.confirm or "Is the result right?", slot.verdicts, index=None,
-                                   horizontal=True, key=f"{skey}_verdict", help=slot.help or None)
+                        _chips(categories.detect(query, language), form, is_admin)
+                if slot.ask_verdict:
+                    verdict = st.radio(slot.confirm or "Is the result right?", slot.verdicts, index=None,
+                                       horizontal=True, key=f"{skey}_verdict", help=slot.help or None)
             else:
                 answers[slot.id] = _input(slot, skey)
 
@@ -231,8 +317,9 @@ def render(ws: WorkspaceConfig, me: str, prefix: str = "") -> None:
         missing.append("fix the query error")
     elif len(res.rows) < form.min_rows:
         missing.append(f"get at least {form.min_rows} row(s) in the result")
-    result_slot = form.slot("result")
-    if verdict is None:
+    if not result_slot.ask_verdict:
+        pass
+    elif verdict is None:
         missing.append("choose " + " / ".join(result_slot.verdicts))
     elif verdict not in result_slot.accept:
         missing.append(f"entries marked '{verdict}' cannot be added; fix the query or choose another answer")
@@ -245,13 +332,13 @@ def render(ws: WorkspaceConfig, me: str, prefix: str = "") -> None:
         clean = {k: (list(v) if isinstance(v, (list, tuple)) else ("" if v is None else v))
                  for k, v in answers.items()}
         outcome = benchmark.submit(ws, form, me, question, query, res.columns, res.rows, clean,
-                                   verdict=verdict, language=language)
+                                   verdict=verdict or "", language=language)
         if outcome.accepted:
             worth, _ = form.score(categories.detect(query, language))
-            pts = worth if verdict in result_slot.scored else 0
+            pts = worth if (not result_slot.ask_verdict or verdict in result_slot.scored) else 0
             st.session_state[f"bm{prefix}_note_{ws.id}"] = (
-                "ok", f"Added to the benchmark as {outcome.id}: {categories.complexity(categories.detect(query, language))} "
-                      f"query, +{pts} points. Closest existing question was {outcome.similarity:.0%} similar.")
+                "ok", f"Added as {outcome.id}: {categories.complexity(categories.detect(query, language))} "
+                      f"query, +{pts} points.")
             st.session_state[vkey] = v + 1
             st.session_state.pop(run_key, None)
         else:
@@ -263,8 +350,8 @@ def render(ws: WorkspaceConfig, me: str, prefix: str = "") -> None:
         st.caption("To add this entry: " + "; ".join(missing) + ".")
 
 
-def _profile_view(form: benchmark.Form, p: benchmark.Profile, language: str) -> None:
-    """One person's points, per category, against the targets the admin set."""
+def _profile_view(form: benchmark.Form, p: benchmark.Profile, language: str, is_admin: bool) -> None:
+    """One person's scores. How they are worked out (categories, points per category) is for admins."""
     m1, m2, m3, m4 = st.columns(4)
     m1.metric(f"Points (goal {form.min_total})" if form.min_total else "Points", p.total)
     m2.metric("Entries added", p.added)
@@ -275,6 +362,10 @@ def _profile_view(form: benchmark.Form, p: benchmark.Profile, language: str) -> 
     if form.min_total:
         st.progress(min(p.total / form.min_total, 1.0),
                     text=f"Overall: {p.total} / {form.min_total} points")
+
+    if not is_admin:
+        _student_rest(form, p, missing)
+        return
 
     st.markdown("**Points by category**")
     rows = []
@@ -301,16 +392,39 @@ def _profile_view(form: benchmark.Form, p: benchmark.Profile, language: str) -> 
         order = categories.LEVEL_ORDER
         st.caption("Complexity of your entries: " + ", ".join(
             f"{n} {p.levels[n]}" for n in order if n in p.levels))
-    if p.verdicts:
-        st.caption("Your verdicts: " + ", ".join(f"{v} {n}" for v, n in sorted(p.verdicts.items())))
+    if p.verdicts and form.slot("result").ask_verdict:
+        st.caption("Verdicts: " + ", ".join(f"{v} {n}" for v, n in sorted(p.verdicts.items())))
     if p.entries:
         with st.expander(f"Entries ({len(p.entries)})"):
             st.dataframe(pd.DataFrame([{"Id": e["id"], "Question": e.get("question", ""),
                                         "Complexity": e["_level"],
                                         "Categories": ", ".join(categories.label(c) for c in e["_categories"]),
-                                        "Verdict": e.get("verdict") or "Correct", "Points": e["_points"]}
+                                        "Their verdict": e.get("verdict") or "—", "Points": e["_points"]}
                                        for e in reversed(p.entries)]),
                          width="stretch", hide_index=True)
+
+
+def _student_rest(form: benchmark.Form, p: benchmark.Profile, missing: dict) -> None:
+    """What a student sees below the totals: their goals and their entries, not the scoring rules."""
+    if missing:
+        st.info("Still needed: " + ", ".join(categories.label(c) for c in missing)
+                + ". Try questions that need these.")
+    elif p.done(form) and (form.min_total or form.targets):
+        st.success("You have met all your targets. Well done! More entries still count.")
+    if p.levels:
+        st.caption("Complexity of your entries: " + ", ".join(
+            f"{n} {p.levels[n]}" for n in categories.LEVEL_ORDER if n in p.levels))
+    asked = form.slot("result").ask_verdict
+    if not p.entries:
+        st.caption("No entries yet.")
+        return
+    st.markdown(f"**Your entries ({len(p.entries)})**")
+    st.dataframe(pd.DataFrame([{"Id": e["id"], "Question": e.get("question", ""),
+                                "Complexity": e["_level"],
+                                **({"Your verdict": e.get("verdict") or "—"} if asked else {}),
+                                "Points": e["_points"]}
+                               for e in reversed(p.entries)]),
+                 width="stretch", hide_index=True)
 
 
 def profile(ws: WorkspaceConfig, me: str, is_admin: bool) -> None:
@@ -326,8 +440,10 @@ def profile(ws: WorkspaceConfig, me: str, is_admin: bool) -> None:
             return
         who = st.selectbox("Person", people, index=people.index(me) if me in people else 0,
                            key=f"bm_profile_who_{ws.id}")
-    _profile_view(form, profiles.get(who, benchmark.Profile(who)), language)
-    with st.expander("How points and complexity work"):
+    _profile_view(form, profiles.get(who, benchmark.Profile(who)), language, is_admin)
+    if not is_admin:
+        return
+    with st.expander("How points and complexity work (admins only)"):
         st.markdown("The system reads each query and finds its categories (join, group by, "
                     "average, …). An entry earns the points of its hardest category only, "
                     "when it is marked " + " or ".join(f"**{v}**" for v in form.slot("result").scored) + ".")

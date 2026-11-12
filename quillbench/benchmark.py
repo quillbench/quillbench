@@ -54,11 +54,11 @@ REJECTED = "rejected.csv"
 # type -> (what the admin sees in the "add a slot" menu, does the person fill it in)
 SLOT_TYPES = {
     "text": ("Text block (instructions, domain notes)", False),
-    "schema": ("Database schema", False),
+    "schema": ("Database schema (Schema tab settings)", False),
     "examples": ("Worked examples", False),
     "question": ("Question (the person writes it)", True),
     "query": ("Query editor with a Run button", True),
-    "result": ("Query result and verdict buttons", True),
+    "result": ("Query result (and optional verdict)", True),
     "choice": ("Label buttons (pick one)", True),
     "dropdown": ("Dropdown (pick one)", True),
     "multi": ("Tick boxes (pick any)", True),
@@ -89,6 +89,10 @@ class Slot:
     maximum: float = 5.0
     step: float = 1.0
     confirm: str = "Is the result right for your question?"   # result: the question above the buttons
+    tables: list = field(default_factory=list)       # schema: tables to show (empty = all)
+    notes: dict = field(default_factory=dict)        # schema: table -> note written by the admin
+    samples: bool = True                             # schema: offer "show example rows"
+    ask_verdict: bool = False                        # result: ask people for a verdict at all
     verdicts: list = field(default_factory=lambda: list(DEFAULT_VERDICTS))   # result
     accept: list = field(default_factory=lambda: list(DEFAULT_VERDICTS))     # verdicts that may be added
     scored: list = field(default_factory=lambda: ["Correct"])                # verdicts that earn points
@@ -110,6 +114,9 @@ class Slot:
             out["required"] = self.required
         if self.type in ("text", "schema") and self.text:
             out["text"] = self.text
+        if self.type == "schema":
+            out.update(tables=list(self.tables), notes={k: v for k, v in self.notes.items() if str(v).strip()},
+                       samples=self.samples)
         if self.type in ("choice", "dropdown", "multi"):
             out["options"] = list(self.options)
         if self.type == "examples":
@@ -117,7 +124,7 @@ class Slot:
         if self.type == "rating":
             out.update(minimum=self.minimum, maximum=self.maximum, step=self.step)
         if self.type == "result":
-            out.update(confirm=self.confirm, verdicts=list(self.verdicts),
+            out.update(ask_verdict=self.ask_verdict, confirm=self.confirm, verdicts=list(self.verdicts),
                        accept=list(self.accept), scored=list(self.scored))
         return out
 
@@ -226,7 +233,7 @@ def check_form(form: Form) -> list[str]:
     for s in form.slots:
         if s.type in ("choice", "dropdown", "multi") and len(s.options) < 2:
             problems.append(f"Slot '{s.label or s.id}' needs at least two options.")
-        if s.type == "result":
+        if s.type == "result" and s.ask_verdict:
             if len(s.verdicts) < 2:
                 problems.append("The result slot needs at least two verdict buttons.")
             elif not set(s.accept) & set(s.verdicts):
@@ -451,7 +458,9 @@ def _verdict(row: dict) -> str:
 
 def earns_points(row: dict, form: Form) -> bool:
     result = form.slot("result")
-    return _verdict(row) in (result.scored if result else ["Correct"])
+    if not row.get("verdict") or not (result and result.ask_verdict):
+        return True     # no verdict asked: every added entry counts
+    return row["verdict"] in result.scored
 
 
 @dataclass

@@ -90,28 +90,33 @@ project yet. She tells the teacher.
 
 ## 4. Reading the database
 
-The **Create** tab is a long form. Mina scrolls down slowly from the top. First comes
-**About this task** (what to do), then the parts that describe the database.
+The tables live on their own tab. Mina clicks **Schema** at the top.
 
-![The schema and the worked examples](images/student-guide/s03-schema-examples.svg)
+![The Schema tab](images/student-guide/s03-schema-examples.svg)
 
-| Number | What it is |
+| Number | What Mina sees and does |
 |---|---|
-| **1** | **Find a table or column.** Mina types `speed`; only tables that have *speed* in their name or columns stay in the list. She clears the box to see everything again. |
-| **2** | **The schema:** every table with its columns, e.g. `reading(sensor_id, ts, speed, volume)` means the table `reading` has the columns `sensor_id`, `ts`, `speed` and `volume`. It is read live from the real database. |
-| **3** | **Worked examples:** questions and queries the teacher wrote. **Run this example** shows the real result, so Mina sees what the data looks like. |
+| **1** | **All tables at a glance** (at the bottom of the tab; click it to open, shown open here): every table on one line, with its columns and types, e.g. `holiday(h_date date [PK], holiday_name varchar, …) -- 休日祝日`. `[PK]` marks the column that identifies each row; `[→ road.id]` means the column points to the `id` of the `road` table. The **copy** button at the top right copies the whole list, e.g. to paste into an AI assistant while working out a query. |
+| **2** | **Choose a table:** a dropdown at the top of the tab. She can type part of a name to find it. Each name shows the description stored in the database. |
+| **3** | The table's name, its number of columns, about how many rows it has, and a **note from the teacher** if there is one. Notes explain things like codes and units. Read them. |
+| **4** | Every column with its type (and key and description when the database has them). |
+| **5** | **The first 10 rows**, so she sees what the values really look like. |
+
+Below that, **Other tables with the same column names** lists tables sharing a column with this one, which is usually how two tables are joined.
+
+Some tables are split into parts, one per month (e.g. `link_congestion_201904`, `…_201905`). The page says so. When it says *"Query link_congestion to use them all"*, the main name reads every month; otherwise she queries the month she needs.
 
 Mina spends five minutes here. She notices:
 
-- `road` has `id`, `name`, `city`;
-- `sensor` has `id`, `road_id`, `lane`, so a sensor belongs to a road through `road_id`;
-- `reading` has one row per sensor per time, with `speed` and `volume`.
+- `holiday` has one row per holiday, with a real date in `h_date`;
+- `link_congestion` has `offer_day` as a **number** like `20190501`, not a date;
+- `course_name` holds the road name, e.g. `国道４号`.
 
-So to talk about roads *and* speeds she needs `reading → sensor → road`: a join of three
-tables.
+> **Tip:** always look at the first 10 rows before writing a query. It is the fastest way to
+> learn how values are written.
 
-> **Tip:** run every example once. It is the fastest way to learn what values look like
-> (e.g. is `ts` written `2024-03-01 08:00` or a number?).
+Back on **Create**, the page starts with **About this task** and any **Worked examples** from
+the teacher. **Run this example** shows an example's real result.
 
 ---
 
@@ -134,9 +139,9 @@ Avoid:
   section 8);
 - questions the data cannot answer (e.g. "Why is traffic bad?").
 
-Before writing the query, Mina clicks **Check similarity** under the question box. It says how
-close her question is to the nearest one already in the benchmark, e.g. *"Closest existing
-question is 48% similar (a classmate's question). The limit is 80%, so this can be added."*
+Before writing the query, Mina clicks **Check similarity** under the question box. A pop-up
+says how close her question is to the nearest one already in the benchmark, e.g. *"Closest is
+48% similar (a question already in the benchmark). The limit is 80%: this can be added."*
 If it says *would not be added*, she rewrites the question first and saves herself the work.
 
 ---
@@ -167,7 +172,7 @@ What she should know about running queries:
 
 ---
 
-## 7. Checking the result and giving your verdict
+## 7. Checking the result
 
 Below the query, the **Result** box fills in.
 
@@ -177,47 +182,23 @@ The picture shows a different, shorter example; Mina's page has the same parts.
 
 | Number | What Mina sees and does |
 |---|---|
-| **1** | The message area next to her counter (empty for now). |
+| **1** | A pop-up in the corner after each Add (section 8). |
 | **2** | **Run query**, which she just clicked. |
-| **3** | **"Is the result right for your question?"** She chooses **Correct**, **Incorrect** or **Uncertain**. |
+| **3** | **Complexity** (Easy, Medium, Hard or Very hard) and the **points** the query is worth if added. The system decides both by reading the query. |
 | **4** | **Add to benchmark** (section 8). |
-| **5** | **Complexity and categories.** The system read her query by itself. |
 
-Mina's result shows `3 row(s) in 0.04 s` and a table with two columns, `name` and
-`avg_speed`. Above the verdict buttons she sees:
+Mina's result shows `5 row(s) in 0.09 s` and a table with `course_name` and `events`. Above
+it she sees **Complexity: Medium · 2 points if added**.
 
-> **Complexity: Very hard** · 4 points (from *Multi join (3+ tables)*)
-> Categories found: `Filter (WHERE)` `Multi join (3+ tables)` `AVG` `GROUP BY` `ORDER BY (sorting)` `Date and time`
+Before adding, she checks the result is really right:
 
-What this means:
+- Do the numbers look sensible (not 0, not millions)?
+- Is it sorted the way the question says?
+- If unsure, she runs a small checking query and then puts her query back.
 
-- **Categories** are the SQL features the system found in her query. Nobody picks them by
-  hand, and she cannot change them, except by changing the query.
-- **Points:** a query earns the points of its **single most valuable category**, not the sum.
-  Here *Multi join* is worth 4, so the query is worth **4 points** even though AVG and GROUP BY
-  are in it too.
-- **Complexity** is Easy, Medium, Hard or Very hard, from the hardest category.
-
-Now the important part: **is the result really right?** Mina checks:
-
-- Are there three roads in Tokyo? She compares with the `road` table in the schema, or runs a
-  quick `SELECT name FROM road WHERE city = 'Tokyo'` and then puts her query back.
-- Do the speeds look sensible (not 0, not 900)?
-- Is it sorted fastest first, as the question says?
-
-Everything looks right, so she chooses **Correct**.
-
-When to choose the others:
-
-| Verdict | Use it when | Points |
-|---|---|---|
-| **Correct** | You checked, and the result answers the question. | yes |
-| **Incorrect** | The query runs but the result is wrong, and you cannot fix it. | no |
-| **Uncertain** | You are not sure: the data is odd, or the question can be read two ways. | no |
-
-Be honest. These verdicts are data for the benchmark too, and the teacher can see them. A
-wrong "Correct" is worse than an honest "Uncertain". (Your teacher may have renamed these
-buttons or added more. The idea is the same.)
+> Your teacher may also ask you to give a **verdict** (for example Correct / Incorrect /
+> Uncertain) under the result. If those buttons are there, choose honestly; *Uncertain* is a
+> useful answer.
 
 ---
 
@@ -232,12 +213,12 @@ buttons or added more. The idea is the same.)
 3. it returned at least 1 row (or the minimum your teacher set);
 4. the query has **not been changed** since it ran (a single extra space counts as a change, so
    run it again);
-5. a verdict is chosen (and it is one the teacher allows to be added);
-6. any extra box marked as required is filled in.
+5. any extra box marked as required is filled in (and a verdict is chosen, if the teacher asks
+   for one).
 
 While something is missing, a grey line under the button says exactly what, for example:
 
-> To add this entry: run the query; choose Correct / Incorrect / Uncertain.
+> To add this entry: run the query.
 
 Mina clicks **Add to benchmark**. One of two things happens:
 
@@ -245,8 +226,8 @@ Mina clicks **Add to benchmark**. One of two things happens:
 
 | Number | What it means |
 |---|---|
-| **1** | **Added.** Green message: *"Added to the benchmark as q_7c21e04a: Very hard query, +4 points."* `q_7c21e04a` is the entry's id; every entry gets its own, never repeated. **Added by you** goes up by one, and the form is emptied for the next question. |
-| **2** | **Not added.** Red message: *"Not added: this question is 91% similar to one already in the benchmark."* Someone (maybe herself, maybe a classmate) already added almost the same question. The counter does **not** go up and there are no points. Her text stays in the boxes, so she can rewrite the question to ask something genuinely different, run again and add again. |
+| **1** | **Added.** A pop-up in the top corner: *"Added as q_7c21e04a: Medium query, +2 points."* It fades after a few seconds. `q_7c21e04a` is the entry's id; every entry gets its own, never repeated. **Added by you** goes up by one, and the form is emptied for the next question. |
+| **2** | **Not added.** A pop-up: *"Not added: this question is 91% similar to one already in the benchmark."* Someone (maybe herself, maybe a classmate) already added almost the same question. The counter does **not** go up and there are no points. Her text stays in the boxes, so she can rewrite the question to ask something genuinely different, run again and add again. |
 
 About similarity:
 
@@ -282,34 +263,19 @@ Other situations:
 
 ## 10. Looking at your scores: the Profile tab
 
-After a few entries, Mina clicks **Profile** at the top.
+After a few entries, Mina clicks **Profile** at the top. She sees:
 
-![The Profile tab](images/admin-guide/12-profile.svg)
+- **Points (goal 30):** her total so far, and a bar such as *Overall: 6 / 30 points*;
+- **Entries added** and **Not added (too similar)**;
+- **Targets left:** how many of the teacher's goals are still open;
+- **Still needed:** which kinds of query she has not done enough of yet, e.g. *Multi join (3+
+  tables), Window function (OVER)*;
+- **Complexity of your entries:** e.g. *Medium 1, Very hard 1*;
+- **Your entries:** every entry she added, with its id, question, complexity and points (and
+  her verdict, if the teacher asks for verdicts).
 
-| Number | What Mina sees |
-|---|---|
-| **1** | **Points (goal 30):** her total so far. **Entries added**, **Not added** (too similar), and **Targets left**: how many goals are still open (each category minimum, plus the overall goal). The bar shows *Overall: 18 / 30 points*. |
-| **2** | **Points by category**, one row per category she has used or has a target in: how many entries use it, the points for it, the **Minimum** the teacher set, a progress bar, and **✓ met** or **4 more**. |
-| **3** | **Still needed:** a plain list of what is missing, e.g. *Multi join (3+ tables) (4 pt); Window function (OVER) (4 pt)*. |
-
-Below that:
-
-- **Complexity of your entries:** e.g. *Easy 3, Medium 2, Very hard 2*;
-- **Your verdicts:** e.g. *Correct 6, Uncertain 1*;
-- **Entries (7):** click to open a table of everything she added: id, question, complexity,
-  categories, verdict and points;
-- **How points and complexity work:** the full list of categories with their points and
-  minimums, and which category gives which complexity.
-
-How to read the two kinds of numbers:
-
-- Her **total** counts each entry **once**, with the points of its best category. Her first
-  query (multi join + AVG + GROUP BY) added **4** to the total.
-- The **category table** shows what she has *used*. That same query appears in the Multi join
-  row, the AVG row and the GROUP BY row, because it helps with the minimum of each.
-
-Entries marked **Incorrect** or **Uncertain** appear in her list and in her verdict count but
-give **0** points.
+How the points are worked out is not shown to students; the teacher decides it. A query that
+uses harder SQL is worth more.
 
 The **Progress** tab shows only the number of entries she added. The Profile tab is the one to
 use.
@@ -318,7 +284,7 @@ use.
 
 ## 11. Planning the next questions
 
-Mina's profile says she still needs 4 points of multi join and 4 points of window functions.
+Mina's profile says she still needs *Multi join* and *Window function* queries.
 So she plans questions that **need** those features, instead of writing easy ones:
 
 | Still needed | A question that needs it |
@@ -352,8 +318,8 @@ submit.
 
 1. **One question, one query, one clear answer.**
 2. **Write the question first, then the query.** Not the other way round.
-3. **Check the result before you choose Correct.** Run small checking queries if needed.
-4. **Be honest with verdicts.** *Uncertain* is a useful answer.
+3. **Check the result before you add it.** Run small checking queries if needed.
+4. **Use the Schema tab.** Look at the first 10 rows of every table you use.
 5. **Make it different.** Questions 80% or more similar to an existing one are not added.
 6. **Use the hard features only where the question needs them.**
 7. **Never share your password.** Everything you add is saved under your name.
