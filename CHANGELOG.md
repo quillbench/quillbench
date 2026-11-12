@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.10.2 — 2026-11-12
+
+- **HTTPS without a separate web server.** Set `ssl_cert` and `ssl_key` in `settings.yaml` to a
+  certificate and its private key, and `quillbench serve` serves the site over HTTPS on its
+  usual port. It stops with a clear message if either file is missing.
+
+## 1.10.1 — 2026-11-12
+
+- **The first admin can make or remove admins in the web page** (Admin → People → Admins).
+  The first admin is the earliest admin account made on the server. Other admins cannot change
+  roles, nobody can change their own role there, and university (LDAP) accounts still can never
+  be admins. A changed person is signed out, so the new role applies from their next sign-in.
+- On the Schema tab, *All tables at a glance* is now a collapsible box below the table picker.
+
 ## 1.10.0 — 2026-11-12
 
 - **A fuller schema for the people writing queries**: columns, types, primary keys, links to

@@ -73,15 +73,50 @@ def _assignments(ws: WorkspaceConfig) -> None:
         st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True, height=380)
 
 
+def _admins(me: str, users: dict) -> None:
+    """The first admin only: make someone an admin, or take it away."""
+    with st.expander("Admins (only you, as the first admin, see this)"):
+        admins = sorted(n for n, r in users.items() if r.get("role") == "admin" and n != me)
+        others = sorted(n for n, r in users.items() if r.get("role") != "admin"
+                        and not accounts.is_ldap_account(r) and r.get("active", True))
+        c1, c2 = st.columns(2)
+        with c1:
+            new = st.selectbox("Make an admin", others, index=None, key="own_make",
+                               placeholder="Choose a person",
+                               help="University (LDAP) and blocked accounts are not listed.")
+            if st.button("Make admin", key="own_make_btn", disabled=not new, type="primary"):
+                try:
+                    accounts.set_admin(me, new, True)
+                    st.toast(f"{new} is now an admin (from their next sign-in).", icon="✅")
+                    st.rerun()
+                except ValueError as exc:
+                    st.error(str(exc))
+        with c2:
+            old = st.selectbox("Remove an admin", admins, index=None, key="own_remove",
+                               placeholder="Choose an admin")
+            if st.button("Remove admin", key="own_remove_btn", disabled=not old):
+                try:
+                    accounts.set_admin(me, old, False)
+                    st.toast(f"{old} is now an annotator.", icon="✅")
+                    st.rerun()
+                except ValueError as exc:
+                    st.error(str(exc))
+
+
 def _people(me: str, ldap_on: bool = False) -> None:
     users = accounts.load_users()
+    first = accounts.owner(users)
     st.caption("Accounts are shared by all workspaces and stored with hashed passwords in the "
-               "studio's private folder. Admins are added on the server only: "
-               "`quillbench user add ID --admin`. University (LDAP) accounts cannot be admins.")
+               f"studio's private folder. Only the first admin (**{first or '—'}**) can make or remove "
+               "admins here; on the server, `quillbench user role ID admin`. University (LDAP) "
+               "accounts cannot be admins.")
     rows = [{"User ID": n, "Name": r.get("display_name", n), "Role": r.get("role"),
              "Sign-in": "University" if r.get("source") == "ldap" and not r.get("password_hash") else "Password",
              "Active": r.get("active", True)} for n, r in sorted(users.items())]
     st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+
+    if me == first:
+        _admins(me, users)
 
     c1, c2 = st.columns(2)
     with c1:

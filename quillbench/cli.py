@@ -59,6 +59,12 @@ def cmd_serve(a):
             "--server.baseUrlPath", s.base_url_path,
             "--browser.gatherUsageStats", "false",
             "--theme.base", "light", "--theme.primaryColor", "#2B3A67"]
+    if s.ssl_cert or s.ssl_key:
+        cert, key = Path(s.ssl_cert).expanduser(), Path(s.ssl_key).expanduser()
+        missing = [str(p) for p in (cert, key) if not p.is_file()]
+        if missing:
+            sys.exit(f"HTTPS is set up in settings.yaml, but these files are missing: {missing}")
+        args += ["--server.sslCertFile", str(cert), "--server.sslKeyFile", str(key)]
     os.execv(sys.executable, args)
 
 

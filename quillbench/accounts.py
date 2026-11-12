@@ -261,6 +261,28 @@ def session_epoch(name: str, users: dict) -> int:
     return int(users.get(name, {}).get("session_epoch", 0))
 
 
+def owner(users: dict) -> str:
+    """The first admin account (accounts are stored in the order they were made).
+
+    Only this person may make or remove admins in the web page; everyone can still be
+    changed from the server with ``quillbench user role``.
+    """
+    return next((n for n, r in users.items() if r.get("role") == "admin" and not is_ldap_account(r)), "")
+
+
+def set_admin(actor: str, name: str, make: bool, path: Path | None = None) -> None:
+    """Make ``name`` an admin, or an annotator again, on behalf of ``actor`` (must be the owner)."""
+    users = load_users(path)
+    if actor != owner(users) or not users.get(actor, {}).get("active", True):
+        raise ValueError("Only the first admin can change who is an admin here.")
+    if name == actor:
+        raise ValueError("You cannot change your own role here; use the server for that.")
+    if name not in users:
+        raise ValueError(f"No user '{name}'.")
+    update_user(name, path, role="admin" if make else "annotator")
+    revoke_sessions(name, path)      # the new role applies from their next sign-in
+
+
 def is_admin(name: str, users: dict) -> bool:
     record = users.get(name, {})
     return record.get("role", "") == "admin" and not is_ldap_account(record)

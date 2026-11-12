@@ -271,3 +271,42 @@ def test_manifest_in_finds_older_names(tmp_path):
     assert manifest_in(tmp_path).name in ("pas_workspace.yaml", "labelwise_workspace.yaml")
     (tmp_path / MANIFEST_NAME).write_text("x", encoding="utf-8")
     assert manifest_in(tmp_path) == tmp_path / MANIFEST_NAME
+
+
+def test_only_the_first_admin_can_make_or_remove_admins(tmp_path):
+    import pytest
+    from quillbench import accounts
+    f = tmp_path / "accounts.json"
+    accounts.add_user("boss", "password1", "admin", path=f)
+    accounts.add_user("second", "password1", "admin", path=f)
+    accounts.add_user("ann", "password1", "annotator", path=f)
+    accounts.add_ldap_user("uni", path=f)
+    users = accounts.load_users(f)
+    assert accounts.owner(users) == "boss"
+    with pytest.raises(ValueError):
+        accounts.set_admin("second", "ann", True, path=f)      # not the first admin
+    with pytest.raises(ValueError):
+        accounts.set_admin("boss", "uni", True, path=f)        # LDAP can never be admin
+    with pytest.raises(ValueError):
+        accounts.set_admin("boss", "boss", False, path=f)      # not yourself
+    accounts.set_admin("boss", "ann", True, path=f)
+    accounts.set_admin("boss", "second", False, path=f)
+    users = accounts.load_users(f)
+    assert users["ann"]["role"] == "admin" and users["second"]["role"] == "annotator"
+
+
+def test_serve_adds_https_when_cert_and_key_are_set(tmp_path, monkeypatch):
+    import pytest
+    from quillbench import cli
+    cert, key = tmp_path / "c.pem", tmp_path / "k.pem"
+    cert.write_text("x"); key.write_text("y")
+    (tmp_path / "settings.yaml").write_text(f"ssl_cert: {cert}\nssl_key: {key}\n")
+    monkeypatch.setenv("QUILLBENCH_HOME", str(tmp_path))
+    seen = {}
+    monkeypatch.setattr(cli.os, "execv", lambda exe, args: seen.setdefault("args", args))
+    cli.cmd_serve(type("A", (), {"address": None, "port": None})())
+    args = seen["args"]
+    assert args[args.index("--server.sslCertFile") + 1] == str(cert)
+    key.unlink()
+    with pytest.raises(SystemExit):
+        cli.cmd_serve(type("A", (), {"address": None, "port": None})())

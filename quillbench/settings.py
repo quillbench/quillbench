@@ -31,6 +31,9 @@ class StudioSettings:
     archived_workspaces: list = field(default_factory=list)
     # optional LDAP / Active Directory sign-in, see ldap_auth.py
     ldap: dict = field(default_factory=dict)
+    # optional HTTPS served by QuillBench itself: paths to a certificate and its private key
+    ssl_cert: str = ""
+    ssl_key: str = ""
 
 
 def load_settings(path: Path | None = None) -> StudioSettings:

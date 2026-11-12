@@ -162,7 +162,13 @@ quillbench user add maria --admin --display "Maria"
 - It asks for a password twice. Type it (nothing shows), press Enter, type it again.
 - Then tell the person their user ID and password privately.
 
-Turn an existing annotator into an admin, or back:
+**In the web page (first admin only).** The first admin account made on the server (for us,
+the one created when QuillBench was installed) sees an extra box under **Admin → People →
+Admins**: choose a person under **Make an admin** or **Remove an admin** and click the button.
+The person is signed out and gets the new role at their next sign-in. Other admins do not see
+this box.
+
+**On the server**, turn an existing annotator into an admin, or back:
 
 ```bash
 quillbench user role maria admin
