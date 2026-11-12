@@ -376,3 +376,47 @@ def test_schema_tab_shows_overview_and_one_table(project):
     at.run(timeout=30)
     assert not at.exception, at.exception
     assert any("First 10 rows" in m.value for m in at.markdown)
+
+
+# ── one-time agreement ────────────────────────────────────────────────────
+AGREEMENT_TEXT = "# TEST AGREEMENT TITLE\n\nClause one, exactly as written.\n"
+
+
+def test_agreement_gate_accept_once_and_never_shown_again(project):
+    from quillbench import agreement
+    (project.root / "agreement.md").write_text(AGREEMENT_TEXT, encoding="utf-8")
+    registry.add(project.root)
+    at = _login(AppTest.from_file(APP), "alice")
+    assert not any(t.label == "Create" for t in at.tabs)                 # blocked until accepted
+    assert any("TEST AGREEMENT TITLE" in m.value for m in at.markdown)   # the link, title as written
+    assert _btn(at, "Enter").disabled
+    next(c for c in at.checkbox if c.label == "I accept the terms and conditions").check()
+    at.run(timeout=30)
+    _btn(at, "Enter").click()
+    at.run(timeout=30)
+    assert not at.exception, at.exception
+    assert any(t.label == "Create" for t in at.tabs)
+    assert not any("TEST AGREEMENT TITLE" in m.value for m in at.markdown)   # nowhere in the app now
+    rec = agreement.records(project)["alice"]
+    assert rec["agreement_sha256"] == agreement.fingerprint(AGREEMENT_TEXT)
+    first = rec["accepted_at"]
+    agreement.accept(project, "alice")                                   # a second accept changes nothing
+    assert agreement.records(project)["alice"]["accepted_at"] == first
+
+
+def test_admins_are_not_asked_and_no_file_means_no_gate(project):
+    (project.root / "agreement.md").write_text(AGREEMENT_TEXT, encoding="utf-8")
+    registry.add(project.root)
+    at = _login(AppTest.from_file(APP), "boss")
+    assert any(t.label == "Admin" for t in at.tabs)
+    (project.root / "agreement.md").unlink()
+    at = _login(AppTest.from_file(APP), "bob")
+    assert any(t.label == "Create" for t in at.tabs)
+
+
+def test_column_names_must_be_simple(project):
+    form = benchmark.load_form(project)
+    form.slots.append(benchmark.Slot("Road Type!", "short_text", "Road type"))
+    assert any("Column name 'Road Type!'" in p for p in benchmark.check_form(form))
+    form.slots[-1].id = "road_type"
+    assert not benchmark.check_form(form)

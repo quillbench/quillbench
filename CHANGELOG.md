@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.10.3 — 2026-11-12
+
+- **Clearer form designer.** Each slot's title shows its label (as you type it), its kind and,
+  for slots saved to the CSV, its column name. The column name can now be changed (lower-case
+  letters, digits and _).
+- **A one-time agreement per project.** Put the agreement as `agreement.md` in the project
+  folder. Before anyone who is not an admin can use the project, they see its full text in a
+  short scrolling box, a check box and an Enter button. Acceptance is written
+  once to `agreement_acceptances.json` in the project folder (who, when, and a SHA-256
+  fingerprint of the exact text), is never changed by the app, and the agreement is not
+  shown anywhere in the app after that.
+
 ## 1.10.2 — 2026-11-12
 
 - **HTTPS without a separate web server.** Set `ssl_cert` and `ssl_key` in `settings.yaml` to a

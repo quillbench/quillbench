@@ -61,6 +61,11 @@ def _collect(ws: WorkspaceConfig, form: benchmark.Form) -> None:
             s.examples = [{k: str(v) for k, v in row.items() if str(v or "").strip()}
                           for row in table.to_dict("records")
                           if str(row.get("question") or "").strip()]
+    for s in form.slots:
+        if s.column:
+            new_id = str(ss.get(_k(ws, s, "colid"), s.id)).strip()
+            if new_id and new_id != s.id:
+                s.id = new_id          # check_form rejects bad or duplicate names on save
     ss_form = st.session_state
     form.connection = ss_form.get(f"fb_{ws.id}_conn", form.connection) or ""
     form.participants = list(ss_form.get(f"fb_{ws.id}_people", form.participants))
@@ -84,7 +89,9 @@ def _slot_editor(ws: WorkspaceConfig, form: benchmark.Form, i: int) -> None:
     title, is_input = benchmark.SLOT_TYPES[s.type]
     with st.container(border=True):
         head, up, down, rm = st.columns([8, 1, 1, 1], vertical_alignment="center")
-        head.markdown(f"**{i + 1}. {title}** · `{s.id}`")
+        name = str(st.session_state.get(_k(ws, s, "label"), s.label)).strip() or title.split(" (")[0]
+        kind = title.split(" (")[0]
+        head.markdown(f"**{i + 1}. {name}**  ·  {kind}" + (f"  ·  column `{s.id}`" if s.column else ""))
         if up.button("↑", key=_k(ws, s, "up"), disabled=i == 0, help="Move up"):
             _collect(ws, form)
             form.slots[i - 1], form.slots[i] = form.slots[i], form.slots[i - 1]
@@ -143,7 +150,11 @@ def _slot_editor(ws: WorkspaceConfig, form: benchmark.Form, i: int) -> None:
                                                   "note": st.column_config.TextColumn("Note")})
             st.session_state[f"{_k(ws, s, 'examples')}_value"] = value
         if s.column:
-            st.checkbox("Required", value=s.required, key=_k(ws, s, "required"))
+            c3, c4 = st.columns([2, 3], vertical_alignment="bottom")
+            c3.text_input("Column name in benchmark.csv", value=s.id, key=_k(ws, s, "colid"),
+                          help="Lower-case letters, digits and _ only, starting with a letter. "
+                               "Rename before people start adding entries: earlier entries keep the old column.")
+            c4.checkbox("Required", value=s.required, key=_k(ws, s, "required"))
 
 
 def _schema_settings(ws: WorkspaceConfig, form: benchmark.Form, s: benchmark.Slot) -> None:
@@ -226,6 +237,8 @@ def render(ws: WorkspaceConfig) -> None:
         _points(ws, form)
     st.divider()
     st.markdown("**Form**")
+    st.caption("Edit a slot’s label, help text or column name in its box. Changes are kept when you "
+               "click **Save form** at the bottom.")
     for i in range(len(form.slots)):
         _slot_editor(ws, form, i)
 

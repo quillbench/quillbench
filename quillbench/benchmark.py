@@ -227,6 +227,10 @@ def check_form(form: Form) -> list[str]:
     ids = [s.id for s in form.slots]
     if len(set(ids)) != len(ids):
         problems.append("Two slots have the same id.")
+    for s in form.slots:
+        if s.column and not re.fullmatch(r"[a-z][a-z0-9_]{0,40}", s.id):
+            problems.append(f"Column name '{s.id}' for '{s.label or s.type}': use lower-case letters, "
+                            "digits and _ only, starting with a letter.")
     clash = {s.id for s in form.slots if s.column} & set(FIXED_COLUMNS + REJECT_COLUMNS)
     if clash:
         problems.append(f"These slot ids are reserved: {sorted(clash)}.")

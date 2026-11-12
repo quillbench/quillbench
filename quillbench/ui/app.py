@@ -23,7 +23,7 @@ if str(_ROOT) not in sys.path:
 
 import streamlit as st  # noqa: E402
 
-from quillbench import AUTHOR, SHORT_NAME, __version__, accounts, benchmark, paths, registry  # noqa: E402
+from quillbench import AUTHOR, SHORT_NAME, __version__, accounts, agreement, benchmark, paths, registry  # noqa: E402
 from quillbench.settings import load_settings  # noqa: E402
 from quillbench.storage import batch_status  # noqa: E402
 from quillbench.ui import admin, console, creator, dashboard, generic, query_review, shortcuts  # noqa: E402
@@ -232,6 +232,17 @@ if not my_workspaces:
     st.stop()
 
 ws = by_id[st.session_state.workspace]
+
+# The project's agreement: accepted once, before anything else; never shown again after.
+_terms = agreement.text(ws)
+if _terms is not None and not user_is_admin and not agreement.accepted(ws, me):
+    with st.container(height=460, border=True):
+        st.markdown(_terms)
+    _ok = st.checkbox("I accept the terms and conditions", key=f"agree_{ws.id}")
+    if st.button("Enter", type="primary", disabled=not _ok, key=f"agree_enter_{ws.id}"):
+        agreement.accept(ws, me)
+        st.rerun()
+    st.stop()
 errors, warnings = checks.get(ws.id, ([], []))
 # Always present, so the tabs below keep their place when the check comes or goes.
 check_slot = st.container()

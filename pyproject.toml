@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quillbench"
-version = "1.10.2"
+version = "1.10.3"
 description = "Build benchmark datasets with human annotators: a config-driven annotation platform for research."
 readme = "README.md"
 keywords = ["annotation", "labeling", "benchmark", "dataset", "human evaluation", "streamlit", "research"]
