@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.11.0 — 2026-11-13
+
+Ready for a full class at once.
+
+- **One file per person.** Every Add, accepted or not, is also written to
+  `benchmark/students/<user>.csv` (mode 600) with the local and UTC time, IP address, browser,
+  browser language and a per-tab session id. The shared `benchmark.csv` keeps no addresses.
+  Admins download all of them as one zip from the Progress tab; cells that a spreadsheet would
+  run as formulas are made inert. `timezone` in `settings.yaml` (e.g. `Asia/Tokyo`) sets the
+  local time.
+- **Sign-in log.** Every attempt goes to `logs/signins.csv` (mode 600) in the studio home:
+  time, user id, result, IP address and browser.
+- **Fairer sign-in limits.** Wrong passwords are counted per user id and machine (5), per user
+  id overall (15) and per machine (40), so a classmate cannot lock someone out from their own
+  machine, and a university account is never hammered into its own lockout.
+- **LDAP certificate checked.** The LDAP server's certificate is now verified (system CA list,
+  or `ca_file`); `ldap://` without `start_tls` is refused, so passwords never cross the network
+  in clear text.
+- **Safe account changes under load.** Changes to `accounts.json` are serialised with a file
+  lock, so a sign-out and an admin's edit at the same moment can no longer lose one of them.
+- **Queries under load.** At most `max_parallel_queries` (default 12) database queries run at
+  once; the rest wait up to 20 s. One person runs one query at a time. PostgreSQL results are
+  read through a server-side cursor, so only the rows shown leave the database: a
+  `SELECT *` on a large table can no longer fill the server's memory.
+- **Smaller limits.** Text boxes take at most 2,000 (question, short text), 5,000 (long text)
+  and 20,000 (query) characters; long cells in the stored result preview are clipped.
+- **Faster pages.** The CSV files are read once and kept in memory until they change, and each
+  query's categories are worked out once.
+- **Server hardening.** `quillbench serve` hides error details and file paths from the page,
+  hides the developer menu, stops watching files for changes, keeps XSRF protection on, and
+  caps upload and message size.
+
 ## 1.10.3 — 2026-11-12
 
 - **Clearer form designer.** Each slot's title shows its label (as you type it), its kind and,

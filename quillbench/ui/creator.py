@@ -9,6 +9,7 @@ import streamlit as st
 
 from .. import benchmark, categories, connections, schema_info
 from ..config import WorkspaceConfig
+from .session import client_info
 
 
 @st.cache_data(ttl=600, show_spinner="Reading the database structure…")
@@ -197,6 +198,11 @@ def _similarity_note(ws: WorkspaceConfig, form: benchmark.Form, question: str, m
                  "this can be added.", icon="✅", duration="long")
 
 
+# Longest text one box takes: enough for any real question or query, and it keeps a
+# pasted file from going into the shared CSV files.
+MAX_SHORT, MAX_LONG, MAX_QUERY = 2_000, 5_000, 20_000
+
+
 def _input(slot: benchmark.Slot, key: str):
     label = slot.label or slot.id
     if slot.type == "choice":
@@ -212,9 +218,9 @@ def _input(slot: benchmark.Slot, key: str):
                          value=float(slot.minimum), step=float(slot.step), key=key,
                          help=slot.help or None)
     if slot.type == "short_text":
-        return st.text_input(label, key=key, help=slot.help or None)
+        return st.text_input(label, key=key, help=slot.help or None, max_chars=MAX_SHORT)
     if slot.type == "long_text":
-        return st.text_area(label, key=key, help=slot.help or None, height=110)
+        return st.text_area(label, key=key, help=slot.help or None, height=110, max_chars=MAX_LONG)
     return None
 
 
@@ -272,20 +278,20 @@ def render(ws: WorkspaceConfig, me: str, prefix: str = "", is_admin: bool = Fals
                 _examples_slot(slot, conn, skey, form.min_rows)
             elif slot.type == "question":
                 question = st.text_area(slot.label or "Question", key=skey, height=90,
-                                        help=slot.help or None)
+                                        help=slot.help or None, max_chars=MAX_SHORT)
                 if st.button("Check similarity", key=f"{skey}_sim", disabled=not question.strip(),
                              help="Compares your question with every question already in the benchmark."):
                     _similarity_note(ws, form, question, me, is_admin)
             elif slot.type == "query":
                 editor = st.container(key=f"qb_query_editor{prefix}_{ws.id}")
                 query = editor.text_area(slot.label or "Query", key=skey, height=180,
-                                     help=slot.help or None,
+                                     help=slot.help or None, max_chars=MAX_QUERY,
                                      placeholder="SELECT …" if (not conn or conn.language == "sql")
                                      else "MATCH …")
                 if st.button("Run query", key=f"{skey}_run", disabled=conn is None or not query.strip(),
                              type="secondary"):
-                    st.session_state[run_key] = {"query": query, "result": connections.run(
-                        conn, query, timeout=ws.query_timeout_seconds, cap=ws.display_row_cap)}
+                    st.session_state[run_key] = {"query": query, "result": connections.run_shared(
+                        conn, query, me, timeout=ws.query_timeout_seconds, cap=ws.display_row_cap)}
             elif slot.type == "result":
                 last = st.session_state.get(run_key)
                 if not last:
@@ -332,7 +338,7 @@ def render(ws: WorkspaceConfig, me: str, prefix: str = "", is_admin: bool = Fals
         clean = {k: (list(v) if isinstance(v, (list, tuple)) else ("" if v is None else v))
                  for k, v in answers.items()}
         outcome = benchmark.submit(ws, form, me, question, query, res.columns, res.rows, clean,
-                                   verdict=verdict or "", language=language)
+                                   verdict=verdict or "", language=language, client=client_info())
         if outcome.accepted:
             worth, _ = form.score(categories.detect(query, language))
             pts = worth if (not result_slot.ask_verdict or verdict in result_slot.scored) else 0
@@ -526,7 +532,12 @@ def progress(ws: WorkspaceConfig, me: str, is_admin: bool) -> None:
         if path.exists():
             col.download_button(f"Download {label}", path.read_bytes(), file_name=f"{ws.id}_{label}",
                                 key=f"bm_dl_{ws.id}_{label}", width="stretch")
-    st.caption(f"Saved on the server in `{benchmark.data_dir(ws)}`")
+    if benchmark.students_dir(ws).exists():
+        st.download_button("Download every person's file (zip: each attempt with time, IP and browser)",
+                           benchmark.students_zip(ws), file_name=f"{ws.id}_students.zip",
+                           mime="application/zip", key=f"bm_dl_{ws.id}_students", width="stretch")
+    st.caption(f"Saved on the server in `{benchmark.data_dir(ws)}`; one file per person in "
+               f"`{benchmark.STUDENTS}/`.")
     _similarity_checker(ws, form, accepted)
     if rejected:
         st.markdown("**Recently not added**")

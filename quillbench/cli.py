@@ -58,6 +58,16 @@ def cmd_serve(a):
             "--server.headless", "true",
             "--server.baseUrlPath", s.base_url_path,
             "--browser.gatherUsageStats", "false",
+            # Hardening for a public server: no error details or file paths in the
+            # page, no developer menu, no reloading when files change, small uploads.
+            "--client.showErrorDetails", "none",
+            "--client.toolbarMode", "viewer",
+            "--server.fileWatcherType", "none",
+            "--server.runOnSave", "false",
+            "--server.enableXsrfProtection", "true",
+            "--server.maxUploadSize", "10",
+            "--server.maxMessageSize", "50",
+            "--global.developmentMode", "false",
             "--theme.base", "light", "--theme.primaryColor", "#2B3A67"]
     if s.ssl_cert or s.ssl_key:
         cert, key = Path(s.ssl_cert).expanduser(), Path(s.ssl_key).expanduser()

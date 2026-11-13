@@ -36,7 +36,9 @@ import fcntl
 import json
 import re
 import secrets
+import threading
 import unicodedata
+from functools import lru_cache
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -50,6 +52,9 @@ from .config import WorkspaceConfig
 FORM_NAME = "benchmark_form.yaml"
 ACCEPTED = "benchmark.csv"
 REJECTED = "rejected.csv"
+STUDENTS = "students"           # one CSV per person: every attempt, with time, IP and browser
+# Longest text kept from one result cell in the stored preview.
+PREVIEW_CELL = 500
 
 # type -> (what the admin sees in the "add a slot" menu, does the person fill it in)
 SLOT_TYPES = {
@@ -333,11 +338,28 @@ def rejected_path(ws: WorkspaceConfig) -> Path:
     return data_dir(ws) / REJECTED
 
 
+_cache: dict[Path, tuple[tuple, list[dict]]] = {}
+_cache_lock = threading.Lock()
+
+
 def _read_rows(path: Path) -> list[dict]:
-    if not path.exists():
+    """The file's rows. Kept in memory until the file changes: every page view of
+    every signed-in person reads these files, and they change only on an Add."""
+    try:
+        st = path.stat()
+    except FileNotFoundError:
         return []
-    with path.open(newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+    stamp = (st.st_mtime_ns, st.st_size, st.st_ino)
+    with _cache_lock:
+        hit = _cache.get(path)
+    if hit and hit[0] == stamp:
+        rows = hit[1]
+    else:
+        with path.open(newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        with _cache_lock:
+            _cache[path] = (stamp, rows)
+    return [dict(r) for r in rows]
 
 
 def read_accepted(ws: WorkspaceConfig) -> list[dict]:
@@ -348,8 +370,11 @@ def read_rejected(ws: WorkspaceConfig) -> list[dict]:
     return _read_rows(rejected_path(ws))
 
 
-def _append(path: Path, row: dict) -> None:
+def _append(path: Path, row: dict, mode: int | None = None) -> None:
     """Add one row; the header grows when the form gained a slot since the file began."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if mode is not None and not path.exists():
+        path.touch(mode=mode)
     rows = _read_rows(path)
     header = list(rows[0].keys()) if rows else []
     new_cols = [c for c in row if c not in header]
@@ -361,6 +386,8 @@ def _append(path: Path, row: dict) -> None:
             w.writeheader()
             w.writerows(rows)
             w.writerow(row)
+        if mode is not None:
+            tmp.chmod(mode)
         tmp.replace(path)
         return
     with path.open("a", newline="", encoding="utf-8") as f:
@@ -386,6 +413,71 @@ def _new_id(taken: set[str]) -> str:
             return candidate
 
 
+_SAFE_NAME = re.compile(r"[^A-Za-z0-9._-]")
+
+
+def students_dir(ws: WorkspaceConfig) -> Path:
+    return data_dir(ws) / STUDENTS
+
+
+def student_path(ws: WorkspaceConfig, person: str) -> Path:
+    """``benchmark/students/<person>.csv``; the name is reduced to safe characters."""
+    safe = _SAFE_NAME.sub("_", person).lstrip(".") or "_"
+    return students_dir(ws) / f"{safe}.csv"
+
+
+def read_student(ws: WorkspaceConfig, person: str) -> list[dict]:
+    return _read_rows(student_path(ws, person))
+
+
+def _cell_for_excel(value: str) -> str:
+    """A cell Excel or LibreOffice would run as a formula (``=``, ``+``, ``-``, ``@``) gets a
+    leading apostrophe, so a student's text can never act as a formula on the admin's computer."""
+    return "'" + value if value[:1] in ("=", "+", "-", "@", "\t", "\r") else value
+
+
+def students_zip(ws: WorkspaceConfig) -> bytes:
+    """Every person's file in one zip, made safe to open in a spreadsheet program."""
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        folder = students_dir(ws)
+        for path in sorted(folder.glob("*.csv")) if folder.exists() else []:
+            rows = _read_rows(path)
+            if not rows:
+                continue
+            out = io.StringIO()
+            w = csv.DictWriter(out, fieldnames=list(rows[0].keys()))
+            w.writeheader()
+            for r in rows:
+                w.writerow({k: _cell_for_excel(str(v or "")) for k, v in r.items()})
+            # utf-8-sig so Excel shows Japanese text correctly.
+            zf.writestr(path.name, out.getvalue().encode("utf-8-sig"))
+    return buf.getvalue()
+
+
+def _local(moment: datetime) -> datetime:
+    from .settings import load_settings
+
+    name = load_settings().timezone
+    if name:
+        try:
+            from zoneinfo import ZoneInfo
+
+            return moment.astimezone(ZoneInfo(name))
+        except Exception:
+            pass
+    return moment.astimezone()
+
+
+def _clip(value):
+    if isinstance(value, str) and len(value) > PREVIEW_CELL:
+        return value[:PREVIEW_CELL] + "…"
+    return value
+
+
 @dataclass(frozen=True)
 class Outcome:
     accepted: bool
@@ -396,37 +488,53 @@ class Outcome:
 
 def submit(ws: WorkspaceConfig, form: Form, author: str, question: str, query: str,
            columns: list, rows: list, answers: dict | None = None, verdict: str = "",
-           language: str = "sql") -> Outcome:
+           language: str = "sql", client: dict | None = None) -> Outcome:
     """Store one entry: in benchmark.csv, or in rejected.csv when it repeats a question.
 
     The caller has already run the query; ``columns`` and ``rows`` are its result.
+    Every attempt, added or not, is also written to the person's own file under
+    ``benchmark/students/``, with the local time and ``client`` (IP address,
+    browser, session), which the shared files leave out.
     """
     question, query = question.strip(), query.strip()
     if not question or not query:
         raise ValueError("Both the question and the query are needed.")
     answers = answers or {}
+    client = client or {}
+    now = datetime.now(timezone.utc).replace(microsecond=0)
     with _locked(ws):
         accepted, rejected = read_accepted(ws), read_rejected(ws)
         entry_id = _new_id({r.get("id", "") for r in accepted + rejected})
         row = {"id": entry_id, "author": author,
-               "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+               "created_at": now.isoformat(),
                "question": question, "query": query, "row_count": len(rows),
                "result_columns": json.dumps(list(columns), ensure_ascii=False, default=str),
-               "result_preview": json.dumps(rows[:PREVIEW_ROWS], ensure_ascii=False, default=str),
+               "result_preview": json.dumps([[_clip(v) for v in r] for r in rows[:PREVIEW_ROWS]],
+                                            ensure_ascii=False, default=str),
                "categories": ";".join(categories.detect(query, language)), "verdict": verdict}
         for s in form.slots:
             if s.column:
                 value = answers.get(s.id, "")
                 row[s.id] = json.dumps(value, ensure_ascii=False) if isinstance(value, list) else value
         score, matched = most_similar(question, accepted, form.threshold)
-        if score >= form.threshold:
-            row.update(similarity=f"{score:.3f}", matched_id=matched)
-            _append(rejected_path(ws), row)
-            return Outcome(False, entry_id, score, matched)
+        added = score < form.threshold
         # Kept for added entries too, so admins can see near misses.
-        row.update(similarity=f"{score:.3f}", matched_id=matched if score else "")
-        _append(accepted_path(ws), row)
-        return Outcome(True, entry_id, score, matched)
+        row.update(similarity=f"{score:.3f}", matched_id=matched)
+        _append(accepted_path(ws) if added else rejected_path(ws), row)
+        cats = row["categories"].split(";") if row["categories"] else []
+        worth, _ = form.score(cats)
+        result = form.slot("result")
+        scored = not (result and result.ask_verdict and verdict) or verdict in result.scored
+        own = {"id": entry_id, "status": "added" if added else "not added (too similar)",
+               "submitted_at": _local(now).isoformat(), "submitted_at_utc": now.isoformat(),
+               "points": worth if added and scored else 0,
+               "complexity": categories.complexity(cats)}
+        own.update({k: v for k, v in row.items() if k not in ("id", "author", "created_at")})
+        own.update({"ip": client.get("ip", ""), "user_agent": client.get("user_agent", ""),
+                    "browser_language": client.get("language", ""),
+                    "session": client.get("session", "")})
+        _append(student_path(ws, author), own, mode=0o600)
+        return Outcome(added, entry_id, score, matched)
 
 
 def counts(ws: WorkspaceConfig) -> dict[str, dict[str, int]]:
@@ -451,8 +559,13 @@ def language_of(form: Form) -> str:
 
 def entry_categories(row: dict, language: str) -> list[str]:
     """Read again from the query, so every entry is judged by the same, current rules."""
-    query = row.get("query", "")
-    return categories.detect(query, language or categories.guess_language(query))
+    return list(_categories(row.get("query", ""), language))
+
+
+@lru_cache(maxsize=50_000)
+def _categories(query: str, language: str) -> tuple:
+    # Profiles are rebuilt on every page view; each query is parsed once per process.
+    return tuple(categories.detect(query, language or categories.guess_language(query)))
 
 
 def _verdict(row: dict) -> str:

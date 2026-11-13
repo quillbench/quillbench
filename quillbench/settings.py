@@ -21,6 +21,10 @@ class StudioSettings:
     session_max_age_days: int = 30
     display_row_cap: int = 300
     query_timeout_seconds: int = 30
+    # database queries from the web page that may run at the same moment (others wait)
+    max_parallel_queries: int = 12
+    # time zone for the times in each person's own file, e.g. "Asia/Tokyo"; empty = the server's
+    timezone: str = ""
     port: int = 8560
     base_url_path: str = "quillbench"
     backup_dir: Path = Path.home() / "quillbench_backups"

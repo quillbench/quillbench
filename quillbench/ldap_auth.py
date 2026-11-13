@@ -6,6 +6,7 @@ Turned on by an ``ldap`` block in ``settings.yaml``::
       url: ldaps://ldap.example.edu          # ldap:// with start_tls: true also works
       user_dn: "uid={user},ou=people,dc=example,dc=edu"   # Active Directory: "{user}@example.edu"
       auto_create: true                       # first sign-in makes an annotator account
+      ca_file: /path/to/ca.pem                # only when the server's certificate is from a private CA
 
 The password is checked by binding to the LDAP server as that person; it is never
 stored here. Needs the ``ldap3`` package: ``pip install "quillbench[ldap]"``.
@@ -39,11 +40,22 @@ def check(name: str, password: str, conf: dict) -> bool:
         log.error("LDAP sign-in is configured but ldap3 is not installed: "
                   "pip install 'quillbench[ldap]'")
         return False
+    if str(conf["url"]).lower().startswith("ldap://") and not conf.get("start_tls"):
+        log.error("LDAP sign-in refused: ldap:// without start_tls would send passwords "
+                  "unencrypted. Use ldaps:// or set start_tls: true.")
+        return False
     template = str(conf["user_dn"])
     user = name if "=" not in template else escape_rdn(name)
     timeout = int(conf.get("timeout", 10))
+    import ssl
+
+    # The password crosses the network to this server, so its certificate is always
+    # checked (system CA list, or ``ca_file``); without this anyone on the path could
+    # pose as the LDAP server and collect passwords.
+    tls = ldap3.Tls(validate=ssl.CERT_REQUIRED, version=ssl.PROTOCOL_TLS_CLIENT,
+                    ca_certs_file=conf.get("ca_file") or None)
     try:
-        server = ldap3.Server(str(conf["url"]), connect_timeout=timeout)
+        server = ldap3.Server(str(conf["url"]), connect_timeout=timeout, tls=tls)
         conn = ldap3.Connection(server, user=template.format(user=user), password=password,
                                 receive_timeout=timeout, raise_exceptions=False)
         if conf.get("start_tls"):

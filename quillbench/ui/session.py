@@ -56,3 +56,22 @@ def restore_session(settings: StudioSettings, users: dict) -> tuple[str, int] | 
         return None
     return accounts.session_from_cookie(raw, users, _secret(),
                                         settings.session_max_age_days * 24 * 3600)
+
+
+def client_info() -> dict:
+    """Where a request came from, kept with each saved entry: IP address, browser,
+    browser language and a random id for this browser tab's session."""
+    import secrets
+
+    sid = st.session_state.setdefault("qb_session_id", secrets.token_hex(6))
+    try:
+        ip = st.context.ip_address or ""
+    except Exception:
+        ip = ""
+    try:
+        headers = st.context.headers
+        agent = headers.get("User-Agent", "") or ""
+        lang = headers.get("Accept-Language", "") or ""
+    except Exception:
+        agent = lang = ""
+    return {"ip": ip, "user_agent": agent[:300], "language": lang[:100], "session": sid}

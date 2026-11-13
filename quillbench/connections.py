@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -360,10 +361,14 @@ def _postgres(conn: Connection, query: str, timeout: int, cap: int):
                          options=f"-c statement_timeout={int(timeout * 1000)} "
                                  f"-c default_transaction_read_only=on") as db:
         db.read_only = True
-        with db.cursor() as cur:
+        # A server-side cursor: only the rows shown cross the network. A plain cursor
+        # would pull the whole result into this process first, so one
+        # "SELECT * FROM <big table>" could use gigabytes of the server's memory.
+        with db.cursor(name="qb") as cur:
+            cur.itersize = cap + 1
             cur.execute(query)
+            rows = cur.fetchmany(cap + 1)
             cols = [d.name for d in cur.description or []]
-            rows = cur.fetchmany(cap + 1) if cur.description else []
         db.rollback()
     return cols, rows
 
@@ -433,6 +438,47 @@ def run(conn: Connection, query: str, timeout: int = 30, cap: int = 200) -> Quer
     rows = [[_plain(v) for v in r] for r in rows]
     return QueryResult(list(cols), rows[:cap], round(time.perf_counter() - started, 3),
                        truncated=len(rows) > cap)
+
+
+# Queries from the web page share a fixed number of database slots, so a class
+# pressing Run at the same moment queues briefly instead of opening one database
+# connection each; and one person runs one query at a time.
+_slots: threading.BoundedSemaphore | None = None
+_slots_guard = threading.Lock()
+_busy: set[str] = set()
+QUEUE_WAIT = 20
+
+
+def _shared_slots() -> threading.BoundedSemaphore:
+    global _slots
+    with _slots_guard:
+        if _slots is None:
+            from .settings import load_settings
+
+            _slots = threading.BoundedSemaphore(max(1, int(load_settings().max_parallel_queries)))
+        return _slots
+
+
+def run_shared(conn: Connection, query: str, person: str, timeout: int = 30,
+               cap: int = 200) -> QueryResult:
+    """``run`` for the web page: at most one query per person, and a shared limit."""
+    with _slots_guard:
+        if person in _busy:
+            return QueryResult([], [], 0.0, "Your previous query is still running. "
+                                            "Wait for it to finish, then run again.")
+        _busy.add(person)
+    try:
+        slots = _shared_slots()
+        if not slots.acquire(timeout=QUEUE_WAIT):
+            return QueryResult([], [], 0.0, "The database is busy with other people's queries. "
+                                            "Run again in a few seconds.")
+        try:
+            return run(conn, query, timeout=timeout, cap=cap)
+        finally:
+            slots.release()
+    finally:
+        with _slots_guard:
+            _busy.discard(person)
 
 
 # ──────────────────────────────────────────────────────────────────────────

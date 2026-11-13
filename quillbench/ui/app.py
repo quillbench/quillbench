@@ -27,7 +27,7 @@ from quillbench import AUTHOR, SHORT_NAME, __version__, accounts, agreement, ben
 from quillbench.settings import load_settings  # noqa: E402
 from quillbench.storage import batch_status  # noqa: E402
 from quillbench.ui import admin, console, creator, dashboard, generic, query_review, shortcuts  # noqa: E402
-from quillbench.ui.session import emit_auth_cookie, expire_auth_cookie, restore_session  # noqa: E402
+from quillbench.ui.session import client_info, emit_auth_cookie, expire_auth_cookie, restore_session  # noqa: E402
 from quillbench.ui.theme import inject_css, login_brand, login_head, top_bar  # noqa: E402
 from quillbench.validate import validate_workspace  # noqa: E402
 
@@ -153,18 +153,20 @@ if not st.session_state.logged_in:
                     name_in = st.text_input("User ID", placeholder="Your assigned identifier")
                     pass_in = st.text_input("Password", type="password", placeholder="••••••••")
                     if st.form_submit_button("Sign in", width="stretch", type="primary"):
-                        name_in = name_in.strip()
-                        if accounts.login_locked(name_in):
+                        name_in = name_in.strip()[:64]
+                        client = client_info()
+                        if accounts.login_locked(name_in, client["ip"]):
+                            accounts.log_signin(name_in, "blocked", client)
                             st.error("Too many wrong attempts. Try again in 15 minutes.")
                         elif accounts.sign_in(name_in, pass_in, users, settings.ldap):
-                            accounts.record_login(name_in, True)
+                            accounts.record_login(name_in, True, client)
                             st.session_state.logged_in = True
                             st.session_state.annotator = name_in
                             st.session_state.auth_issued = int(time.time())
                             st.session_state.auth_epoch = accounts.session_epoch(name_in, users)
                             st.rerun()
                         else:
-                            accounts.record_login(name_in, False)
+                            accounts.record_login(name_in, False, client)
                             st.error("Wrong user ID or password.")
                 help_text = ("Use your university login, or the one your study lead gave you."
                              if settings.ldap else "No login yet? Ask your study lead for one.")

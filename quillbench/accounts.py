@@ -31,6 +31,9 @@ URLs leak through history, screen-sharing and proxy logs.
 
 from __future__ import annotations
 
+import csv
+import fcntl
+import functools
 import hashlib
 import hmac
 import json
@@ -39,6 +42,8 @@ import secrets
 import tempfile
 import threading
 import time
+from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 from . import ldap_auth, paths
@@ -105,6 +110,44 @@ def write_json_atomic(path: Path, data: dict, mode: int = 0o600) -> None:
         raise
 
 
+_held = threading.local()
+
+
+@contextmanager
+def accounts_lock():
+    """One change to accounts.json at a time, across threads and processes.
+
+    Each change reads the whole file, edits one record and writes it back; two at
+    once (say a person signing out while an admin adds a student) would otherwise
+    lose one of them. Re-entrant within a thread.
+    """
+    if getattr(_held, "depth", 0):
+        _held.depth += 1
+        try:
+            yield
+        finally:
+            _held.depth -= 1
+        return
+    lock = paths.accounts_file().with_name(".accounts.lock")
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    with lock.open("a") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        _held.depth = 1
+        try:
+            yield
+        finally:
+            _held.depth = 0
+            fcntl.flock(handle, fcntl.LOCK_UN)
+
+
+def _serialised(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        with accounts_lock():
+            return fn(*args, **kwargs)
+    return wrapper
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Identities
 # ──────────────────────────────────────────────────────────────────────────
@@ -116,6 +159,7 @@ def save_users(users: dict, path: Path | None = None) -> None:
     write_json_atomic(path or paths.accounts_file(), {"users": users})
 
 
+@_serialised
 def add_user(name: str, password: str, role: str = "annotator", display_name: str = "",
              path: Path | None = None) -> None:
     name = name.strip()
@@ -133,6 +177,7 @@ def add_user(name: str, password: str, role: str = "annotator", display_name: st
     save_users(users, path)
 
 
+@_serialised
 def add_ldap_user(name: str, role: str = "annotator", display_name: str = "",
                   path: Path | None = None) -> None:
     """An account that signs in with its university (LDAP) password; none is stored here."""
@@ -150,6 +195,7 @@ def add_ldap_user(name: str, role: str = "annotator", display_name: str = "",
     save_users(users, path)
 
 
+@_serialised
 def set_password(name: str, password: str, path: Path | None = None) -> None:
     if len(password) < 8:
         raise ValueError("Use a password of at least 8 characters.")
@@ -161,6 +207,7 @@ def set_password(name: str, password: str, path: Path | None = None) -> None:
     save_users(users, path)
 
 
+@_serialised
 def update_user(name: str, path: Path | None = None, **fields) -> None:
     users = load_users(path)
     if name not in users:
@@ -176,6 +223,7 @@ def update_user(name: str, path: Path | None = None, **fields) -> None:
     save_users(users, path)
 
 
+@_serialised
 def revoke_sessions(name: str, path: Path | None = None) -> None:
     """Cancel every sign-in cookie this person holds, on every device."""
     users = load_users(path)
@@ -217,44 +265,89 @@ def sign_in(name: str, password: str, users: dict, ldap: dict | None = None) -> 
     if not ldap_auth.check(name, password, ldap):
         return False
     if record is None:
-        users = load_users()
-        if name not in users:
-            users[name] = {"role": "annotator", "display_name": name, "active": True, "source": "ldap"}
-            save_users(users)
+        with accounts_lock():
+            users = load_users()
+            if name not in users:
+                users[name] = {"role": "annotator", "display_name": name, "active": True, "source": "ldap"}
+                save_users(users)
     return True
 
 
 # ──────────────────────────────────────────────────────────────────────────
 # Sign-in throttling (in-process: the studio runs as one server process)
 # ──────────────────────────────────────────────────────────────────────────
+# Three limits over the last LOCKOUT_SECONDS:
+#  * one user id from one address: MAX_FAILURES wrong passwords;
+#  * one user id from anywhere: MAX_FAILURES_PER_ID, so guessing from many machines
+#    stops too, and a university account is never hammered into its own lockout;
+#  * one address: MAX_FAILURES_PER_IP, whatever ids it tries.
+# A classmate typing someone else's id from their own machine blocks only
+# themselves until the per-id limit; the owner can still sign in from theirs.
 MAX_FAILURES = 5
+MAX_FAILURES_PER_ID = 15
+MAX_FAILURES_PER_IP = 40
 LOCKOUT_SECONDS = 15 * 60
-_failures: dict[str, list[float]] = {}
+_MAX_KEYS = 20_000
+_failures: dict[tuple, list[float]] = {}
 _failures_lock = threading.Lock()
 
 
-def _recent_failures(name: str, now: float) -> list[float]:
-    recent = [t for t in _failures.get(name, []) if now - t < LOCKOUT_SECONDS]
+def _recent(key: tuple, now: float) -> list[float]:
+    recent = [t for t in _failures.get(key, []) if now - t < LOCKOUT_SECONDS]
     if recent:
-        _failures[name] = recent
+        _failures[key] = recent
     else:
-        _failures.pop(name, None)
+        _failures.pop(key, None)
     return recent
 
 
-def login_locked(name: str) -> bool:
-    """True after MAX_FAILURES wrong passwords for this id in the last LOCKOUT_SECONDS."""
+def login_locked(name: str, ip: str = "") -> bool:
+    """True while this id (from this address), this id overall, or this address is blocked."""
+    now = time.time()
     with _failures_lock:
-        return len(_recent_failures(name, time.time())) >= MAX_FAILURES
+        return (len(_recent(("id-ip", name, ip), now)) >= MAX_FAILURES
+                or len(_recent(("id", name), now)) >= MAX_FAILURES_PER_ID
+                or (bool(ip) and len(_recent(("ip", ip), now)) >= MAX_FAILURES_PER_IP))
 
 
-def record_login(name: str, ok: bool) -> None:
+def record_login(name: str, ok: bool, client: dict | None = None) -> None:
+    client = client or {}
+    ip = client.get("ip", "")
+    now = time.time()
     with _failures_lock:
         if ok:
-            _failures.pop(name, None)
+            _failures.pop(("id-ip", name, ip), None)
         else:
-            _recent_failures(name, time.time())
-            _failures.setdefault(name, []).append(time.time())
+            if len(_failures) > _MAX_KEYS:        # random ids must not grow memory forever
+                for key in [k for k in list(_failures) if not _recent(k, now)]:
+                    _failures.pop(key, None)
+            for key in (("id-ip", name, ip), ("id", name)) + ((("ip", ip),) if ip else ()):
+                _recent(key, now)
+                _failures.setdefault(key, []).append(now)
+    log_signin(name, "ok" if ok else "wrong password", client)
+
+
+_log_lock = threading.Lock()
+
+
+def log_signin(name: str, result: str, client: dict | None = None) -> None:
+    """One line per sign-in attempt in ``logs/signins.csv`` (mode 600) in the studio home."""
+    client = client or {}
+    path = paths.accounts_file().parent / "logs" / "signins.csv"
+    row = [datetime.now(timezone.utc).isoformat(timespec="seconds"), str(name)[:64], result,
+           client.get("ip", ""), client.get("user_agent", "")[:300]]
+    try:
+        with _log_lock:
+            path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            new = not path.exists()
+            fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+            with os.fdopen(fd, "a", newline="", encoding="utf-8") as fh:
+                w = csv.writer(fh)
+                if new:
+                    w.writerow(["time_utc", "user", "result", "ip", "user_agent"])
+                w.writerow(row)
+    except OSError:
+        pass        # a full disk must not stop people signing in
 
 
 def session_epoch(name: str, users: dict) -> int:
@@ -270,6 +363,7 @@ def owner(users: dict) -> str:
     return next((n for n, r in users.items() if r.get("role") == "admin" and not is_ldap_account(r)), "")
 
 
+@_serialised
 def set_admin(actor: str, name: str, make: bool, path: Path | None = None) -> None:
     """Make ``name`` an admin, or an annotator again, on behalf of ``actor`` (must be the owner)."""
     users = load_users(path)
